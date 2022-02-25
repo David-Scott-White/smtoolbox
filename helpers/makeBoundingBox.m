@@ -7,14 +7,8 @@ end
 
 numCentroids = size(centroids,1);
 boundingBox = zeros(numCentroids, 4);
-pixlelList = cell(numCentroids, 4); 
-
 boundingBox(:,1) = floor(centroids(:,1))-radius; 
 boundingBox(:,2) = floor(centroids(:,2))-radius; 
 boundingBox(:,3:4) = radius*2+1;
-
-pixelList = zeros(diameter, diameter);
-
-
 
 end
