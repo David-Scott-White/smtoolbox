@@ -428,7 +428,12 @@ switch eventdata.Key
             end
             handles.info.nselected =   [handles.info.nselected + 1, handles.info.nselected + 1];
         end
-        guiUpdateTraceInfo(hObject, handles);
+        % guiUpdateTraceInfo(hObject, handles);
+        handles.textStatus.String = '1';
+        totalSelected = handles.info.nselected(handles.info.channelIndex);
+        newStr = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
+        handles.textSelectedPercent.String = newStr;
+        guidata(hObject, handles);
         
     case  'downarrow' % NEED BUTTON TO APPLY TO ALL CHANNELS OR ONLY CURRENT
         roiIdx = handles.info.roiIndex;
@@ -438,7 +443,14 @@ switch eventdata.Key
             end
             handles.info.nselected =  [handles.info.nselected - 1, handles.info.nselected - 1];
         end
-        guiUpdateTraceInfo(hObject, handles);
+        % guiUpdateTraceInfo(hObject, handles); % should replace this with the specific update. 
+        handles.textStatus.String = '0';
+        totalSelected = handles.info.nselected(handles.info.channelIndex);
+        newStr = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
+        handles.textSelectedPercent.String = newStr;
+        tic
+        guidata(hObject, handles);
+        toc
         
     case 'space'
         j = handles.popupmenuChannel.Value +    1;

@@ -71,10 +71,12 @@ if ~saveOnly
     end
     
     % check for legend, modify
-    hh  = findobj('Type', 'Legend');
-    for i = 1:length(hh)
-        hh(i).FontSize = legendFontSize;
-        hh(i).ItemTokenSize = legendTokenSize;
+    if ~isempty(legendTokenSize)
+        hh  = findobj('Type', 'Legend');
+        for i = 1:length(hh)
+            hh(i).FontSize = legendFontSize;
+            hh(i).ItemTokenSize = legendTokenSize;
+        end
     end
 end
 % Save (as a .mat, .pdf, and .png);

@@ -1043,13 +1043,44 @@ else
     errordlg(msg);
 end
 
+output = [handles.data.time{vidIdx}, intensity_au];
+fileName = [handles.data.videoPath, 'intensityPerFrame-Channel', num2str(vidIdx),'.xlsx'];
+xlswrite(fileName,output)
 
 % --------------------------------------------------------------------
 function plotAOIOverTime_Callback(hObject, eventdata, handles)
 % hObject    handle to plotAOIOverTime (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+aoi = struct; 
+aoi.radius = round(str2double(handles.edit_radius.String));
+aoi.area = round(str2double(handles.edit_area.String));
+aoi.fp = round(str2double(handles.edit_falsePositive.String));
+aoi.gauss = handles.checkbox_gauss.Value;
+aoi.gauss = 0; 
+aoi.bkg = 0; 
+aoi.tol = str2double(handles.editTol.String); 
+aoi.method = 'GLRT';
 
+% for now, just channel 1
+channelIdx = 1; 
+nFrames = size(handles.data.videos{channelIdx},3);
+aoiPerFrame = zeros(nFrames,1);
+wb = waitbar(0,'Find AOI in each frame...');
+for i = 1:nFrames
+    im = handles.data.videos{channelIdx}(:,:,i);
+    aoiTemp = findAOI(im, aoi);
+    aoiPerFrame(i,1) = length(aoiTemp);
+    waitbar(i/nFrames,wb);
+end
+close(wb)
+
+figure; 
+plot(1:nFrames, aoiPerFrame,'-o')
+
+output = [handles.data.time{channelIdx}, aoiPerFrame];
+fileName = [handles.data.videoPath, 'aoiPerFrame-Channel', num2str(channelIdx),'.xlsx'];
+xlswrite(fileName,output)
 
 % --------------------------------------------------------------------
 function flipImageHeader_Callback(hObject, eventdata, handles)

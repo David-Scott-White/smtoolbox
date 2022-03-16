@@ -29,14 +29,14 @@ switch aoi.method
         [BW, ~, FAR] = GLRTfiltering (image, aoi.area, aoi.radius, aoi.fp);
         BW = bwareaopen(BW, aoi.radius, 8);
         BW = bwareafilt(BW, [1, 10]);
-        stats = regionprops(BW,FAR, 'WeightedCentroid');
+        stats = regionprops(BW,FAR, 'WeightedCentroid', 'MeanIntensity');
         
     case 'Otsu'
         se = strel('disk',3);
         im = imtophat(mat2gray(image), se);
         BW = imbinarize(im,'global');
         BW = bwareaopen(BW, aoi.radius, 8);
-        stats = regionprops(BW,im,'WeightedCentroid');
+        stats = regionprops(BW,im,'WeightedCentroid','MaxIntensity', 'Area');
 end
 
 centroids = cat(1,stats.WeightedCentroid);

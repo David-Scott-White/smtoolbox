@@ -15,7 +15,7 @@ function rois = projectAOI(rois, video)
 nTotal = nChannels*nROIs;
 p = 1;
 wb = waitbar(0, 'Projecting AOIs...');
-% removeIdx = [];
+removeIdx = [];
 for j = 1:nChannels
     videoIter = video{j};
     nFrames = size(videoIter, 3);
@@ -39,15 +39,20 @@ for j = 1:nChannels
         pixelList = boundBoxToPixels(bb); % need var option to control for area size
         nPixelList = size(pixelList,1)^0.5; 
         pixelValues = zeros(length(pixelList), nFrames);
-        for c = 1:length(pixelList)
-            pixelValues(c,:) = videoIter(pixelList(c,2), pixelList(c,1), :);
+        if sum(pixelList(:,2)<=0)
+            removeIdx = [removeIdx; i];
+        else
+            for c = 1:length(pixelList)
+                pixelValues(c,:) = videoIter(pixelList(c,2), pixelList(c,1), :);
+            end
+            rois(i,j).spot = reshape(pixelValues,[nPixelList, nPixelList, nFrames]);
         end
-        rois(i,j).spot = reshape(pixelValues,[nPixelList, nPixelList, nFrames]);
 
         waitbar(p/nTotal, wb);
         p = p +1;
     end
 end
+rois(removeIdx, :)=[]; 
 close(wb)
 
 % need some way to detect beads
