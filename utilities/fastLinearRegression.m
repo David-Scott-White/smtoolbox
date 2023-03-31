@@ -12,5 +12,6 @@ b = X\y;
 Yhat = X*b; 
 R2 = 1 - sum((y - Yhat).^2)/sum((y - mean(y)).^2);
 RMSE = sqrt((sum((y - Yhat).^2))/length(y));
-
+disp(sprintf('Intercept:  %0.2d', b(1)))
+disp(sprintf('Slope:  %0.2d', b(2)))
 end

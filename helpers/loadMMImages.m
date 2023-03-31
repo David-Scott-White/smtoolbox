@@ -62,7 +62,7 @@ for i = 1:length(listing)
         if isempty(allVideos)
             allVideos = zeros(size(image,1), size(image,2), totalFrames); 
         end
-        allVideos(:,:,x) = image;
+        allVideos(:,:,x) = image + 1; % TEMP PATCH FOR BACKGROUND SUBTRACTION
         x = x+1; 
     end
     waitbar(i/totalFrames, h);

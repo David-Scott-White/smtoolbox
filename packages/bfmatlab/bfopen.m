@@ -123,7 +123,7 @@ else
     planeSize = javaMethod('getPlaneSize', 'loci.formats.FormatTools', r);
 end
 
-if planeSize/(1024)^3 >= 2,
+if planeSize/(1024)^3 >= 2
     error(['Image plane too large. Only 2GB of data can be extracted '...
         'at one time. You can workaround the problem by opening '...
         'the plane in tiles.']);

@@ -20,7 +20,13 @@ if handles.checkboxAdjustEvents.Value == 1
             handles.data.rois(i,j).fit.class = class;
             handles.data.rois(i,j).events = findEvents(class);
             
-            handles.info.currentEvent = 1;
+            if handles.info.currentEvent-1 == 0 
+                handles.info.currentEvent = 1;
+            else
+                handles.info.currentEvent =  handles.info.currentEvent-1;
+            end
+                
+            %handles.info.currentEvent = handles.info.currentEvent;
             guidata(hObject, handles);
             guiPlotTraces(hObject, handles, 1);
             guiPlotTraces(hObject, handles, 2);

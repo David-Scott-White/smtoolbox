@@ -1,4 +1,4 @@
-function varargout = smVideoProcessing(varargin)
+ function varargout = smVideoProcessing(varargin)
 % SMVIDEOPROCESSING MATLAB code for smVideoProcessing.fig
 %      SMVIDEOPROCESSING, by itself, creates a new SMVIDEOPROCESSING or raises the existing
 %      singleton*.
@@ -14,7 +14,7 @@ function varargout = smVideoProcessing(varargin)
 %      applied to the GUI before smVideoProcessing_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
 %      stop.  All inputs are passed to smVideoProcessing_OpeningFcn via varargin.
-%
+%e
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
@@ -22,7 +22,7 @@ function varargout = smVideoProcessing(varargin)
 
 % Edit the above text to modify the response to help smVideoProcessing
 
-% Last Modified by GUIDE v2.5 05-Feb-2022 15:30:11
+% Last Modified by GUIDE v2.5 21-Mar-2023 11:26:20
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -379,7 +379,14 @@ end
 
 % channel 1
 aoi.method = 'GLRT';
-handles.data.rois = findAOI(imageMu, aoi); % Otsu, GLRT
+% handles.data.rois = findAOI(imageMu, aoi); % Otsu, GLRT
+parms.method = aoi.method;
+parms.radius = aoi.radius;
+parms.falsePositive = aoi.fp;
+parms.gaussBool = aoi.gauss;
+parms.gaussTol = aoi.tol;
+showResult = 0;
+handles.data.rois = findAreasOfInterest(imageMu, parms); % Otsu, GLRT
 
 handles.textAOI.String = num2str(length(handles.data.rois)); 
 handles.showAOI1.Value = 1; 
@@ -406,24 +413,37 @@ for j = 1:handles.data.nVideos
     % add in centroid and bounding box for each frame
     nframe = size(handles.data.videos{j},3);
     for i = 1:length(handles.data.rois)
-        centroid = zeros(nframe,2) + handles.data.rois(i,j).Centroid;
-        boundingBox = zeros(nframe,4)+ handles.data.rois(i,j).boundingBox;
-        handles.data.rois(i,j).Centroid = centroid;
-        handles.data.rois(i,j).boundingBox = boundingBox;
+        handles.data.rois(i,j).Centroid = handles.data.rois(i,j).centroid;
+        if isfield(handles.data.rois(i,1), 'Centroid') && ~isempty(handles.data.rois(i,j).Centroid)
+            centroid = zeros(nframe,2) + handles.data.rois(i,j).Centroid;
+            boundingBox = zeros(nframe,4)+ handles.data.rois(i,j).boundingBox;
+            handles.data.rois(i,j).Centroid = centroid;
+            handles.data.rois(i,j).boundingBox = boundingBox;
+        else
+            centroid = zeros(nframe,2) + handles.data.rois(i,j).centroid;
+            boundingBox = zeros(nframe,4)+ handles.data.rois(i,j).boundingBox;
+            handles.data.rois(i,j).Centroid = centroid;
+            handles.data.rois(i,j).boundingBox = boundingBox;
+        end
     end
     
     % check for out of bound (bit messy... )
-    idx = checkForOutofBoundROIs(handles.data.rois(:,j), handles.data.videos{j}(:,:,end));
+    
+    if min(min(handles.data.videos{j}(:,:,1))) < 1 % TEMP PATCH FOR LOADING BACKGROUND SUBTRACTED VIDEO
+        idx = checkForOutofBoundROIs(handles.data.rois(:,j), handles.data.videos{j}(:,:,end)+100);
+    else
+        idx = checkForOutofBoundROIs(handles.data.rois(:,j), handles.data.videos{j}(:,:,end));
+    end
     if ~isempty(idx)
         handles.data.rois(idx,:) = [];
     end
-    
-    guidata(hObject, handles);
-    guiUpdateVideo(hObject, handles, j, 1);
-    if ~isempty(idx)
-        handles.textAOI.String = num2str(length(handles.data.rois)); 
-         guiUpdateVideo(hObject, handles, 1, 1);
-    end
+end
+
+guidata(hObject, handles);
+guiUpdateVideo(hObject, handles, j, 1);
+if ~isempty(idx)
+    handles.textAOI.String = num2str(length(handles.data.rois));
+    guiUpdateVideo(hObject, handles, 1, 1);
 end
 
 % --- Executes on slider movement.
@@ -811,6 +831,12 @@ if ~isempty(exportInfo)
     frame = exportInfo.frame;
     % need error check here
     n = exportInfo.channel;
+    scaleLimits = []; 
+    if n == 1
+        scaleLimits = [handles.slider_BCmin1.Value, handles.slider_BCmax1.Value];
+    elseif n == 2
+        scaleLimits = [handles.slider_BCmin2.Value, handles.slider_BCmax2.Value];
+    end
     nframes = size(handles.data.videos{n},3);
     if frame > nframes
         errordlg('Frame is out of bounds');
@@ -854,7 +880,8 @@ if ~isempty(exportInfo)
         
         % write images
         exportFrame(image, 'aoi', bb, 'time_s', time_s,...
-            'scaleBar', scaleBar, 'umPerPixel', umPerPixel, 'filePath', tempFilePath);
+            'scaleBar', scaleBar, 'umPerPixel', umPerPixel,...
+            'scaleLimits', scaleLimits, 'filePath', tempFilePath);
     end
 end
 
@@ -982,6 +1009,7 @@ function saveVideo_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Option to export data back to tiff (background, drift, align)
+[saveFile,savePath] = uiputfile('.tiff'); 
 
 
 function resetImages_Callback(hObject, eventdata, handles)
@@ -1349,20 +1377,23 @@ if ~isfield(handles.data, 'alignTransform')
     handles.data.alignTransform = struct;
     handles.data.alignTransform.tformImage = [];
     handles.data.alignTransform.alignAOI = [];
-    handles.data.alignTranform.rmse = [];
+    handles.data.alignTransform.x = [];
+    handles.data.alignTransform.rmse = [];
     handles.data.alignTransform.centroids = [];
 end
 % need error check for if video 2 event exists
+
 image1 = handles.data.videos{1}(:,:, handles.data.frame{1}(1));
 image2 = handles.data.videos{2}(:,:, handles.data.frame{2}(1));
+
 showPlot = 1; % put in option?
 [handles.data.alignTransform.tformImage, ~, refObj1, refObj2] = alignImages(image1, image2, showPlot);
 
 % apply transform to all images in channel 2
 nFrames = size(handles.data.videos{2},3);
 for i = 1:nFrames
-    handles.data.videos{2}(:,:,i) = imwarp(image2, refObj2,...
-        handles.data.alignTransform.tformImage, 'OutputView', refObj1, 'SmoothEdges', true);
+    handles.data.videos{2}(:,:,i) = imwarp(handles.data.videos{2}(:,:,i), refObj2,...
+        handles.data.alignTransform.tformImage, 'OutputView', refObj1, 'SmoothEdges', true); %%%
 end
 guidata(hObject, handles);
 handles = guiInitBCSlider(hObject, handles, 2, 1); % REALLY FIX THIS
@@ -1380,7 +1411,7 @@ if ~isfield(handles.data, 'alignTransform')
     handles.data.alignTransform = struct;
     handles.data.alignTransform.tformImage = [];
     handles.data.alignTransform.tformAOI = [];
-    handles.data.alignTranform.rmse = [];
+    handles.data.alignTransform.rmse = [];
     handles.data.alignTransform.centroids = [];
 end
 aoi.radius = round(str2double(handles.edit_radius.String));
@@ -1391,17 +1422,24 @@ aoi.bkg = 0;
 aoi.tol = str2double(handles.editTol.String); 
 aoi.method = 'GLRT';
 
+% ADD IN GUI FOR WHICH FRAMES TO USE
+
 % find rois in each channel (need option for taking mean of image)
 image1 = handles.data.videos{1}(:,:, handles.data.frame{1}(1));
 image2 = handles.data.videos{2}(:,:, handles.data.frame{2}(1));
+%image1 = mean(handles.data.videos{1}(:,:,end-3:end), 3);
+%image2 = mean(handles.data.videos{2}(:,:,end-3:end), 3);
+
+%image1 = mean(handles.data.videos{1}(:,:,100:103), 3);
+%image2 = mean(handles.data.videos{2}(:,:,100:103), 3);
 
 % get pairs
 maxDist = 1;
 showPlot = 1;
 [tform, centroidPairs, rmse, rois1, ~] = alignAOI(image1, image2, aoi, maxDist, showPlot);
 handles.data.alignTransform.tformAOI = tform;
-handles.data.alignTranform.rmse = rmse;
-handles.data.alignTransform.centroids =centroidPairs;
+handles.data.alignTransform.rmse = rmse;
+handles.data.alignTransform.centroids = centroidPairs;
 
 % show AOI found
 handles.data.rois = rois1;
@@ -1442,3 +1480,214 @@ if isfield(handles.data, 'alignTransform')
         disp(['  >> ', [path, file]]);
     end
 end
+
+
+% --- Executes on button press in pushbutton_filterAOI.
+function pushbutton_filterAOI_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_filterAOI (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[~, idx1] = smvideo_removeOutliers(handles.data.rois(:,1), 'maxIntensity', 0);
+[~, idx2]= smvideo_removeOutliers(handles.data.rois(:,1), 'gaussSigma', 0);
+
+% find zero pixels in last frame
+img = handles.data.videos{end}(:,:,end);
+if isempty(img)
+    img = handles.data.videos{1}(:,:,end);
+end
+% check for zero values in last channel
+idx3 = []; 
+for i = 1:length(handles.data.rois(:,end))
+    pixelList = handles.data.rois(i,end).pixelList;
+    for j = 1:size(pixelList,1)
+        col = pixelList(j,1);
+        row = pixelList(j,2);
+        if img(row, col) == 0
+            idx3 = [idx3;i];
+        end
+    end
+end
+
+remove_index = unique([idx1; idx2; idx3]);
+handles.data.rois(remove_index, :) = []; 
+handles.textAOI.String = num2str(length(handles.data.rois)); 
+guidata(hObject, handles);
+for j = 1:2
+    guiUpdateVideo(hObject, handles, j, 1);
+end
+
+
+% --- Executes on button press in pushbutton_coloc.
+function pushbutton_coloc_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_coloc (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% temporary rewrite to auto crop images in both channels from drift
+
+% adapted from
+% https://www.mathworks.com/matlabcentral/answers/297568-how-to-remove-white-background-from-image
+
+xx = 4;
+X = zeros(handles.data.nVideos,4); % xstart, xstop, ystart, ystop
+if handles.data.nVideos == 1
+    binaryImage = handles.data.videos{1}(:,:,end) > 0;
+else
+    binaryImage = handles.data.videos{2}(:,:,end) > 0;
+end
+binaryImageFilt = bwareafilt(binaryImage, 1);
+[rows, columns] = find(binaryImageFilt);
+row1 = min(rows);
+row2 = max(rows);
+col1 = min(columns);
+col2 = max(columns);
+
+img = binaryImageFilt(row1:row2, col1:col2);
+figure; imshow(img, [])
+
+% crop videos
+for i = 1:handles.data.nVideos
+    for j = 1:size(handles.data.videos{i},3)
+        handles.data.videos{i}(:,:,j) =  handles.data.videos{i}(row1:row2, col1:col2, :);
+    end
+end
+    
+    
+
+% adjust AOIs
+
+% centroids = cell(2,1);
+% for i = 1:2
+%     tmp = handles.data.aoiInfo;
+%     
+%     parms.method = tmp.method;
+%     parms.radius = tmp.radius;
+%     parms.falsePositive = tmp.fp;
+%     parms.falsePositive = 30;
+% 
+%     parms.gaussBool = tmp.gauss;
+%     parms.gaussTol = tmp.tol;
+%     showResult = 0;
+%     
+%     parms.minDist = 1;
+%     nFrames = handles.data.frame{i}(end);
+%     
+%     if nFrames < 10
+%         imageMu = mean(handles.data.videos{i}(:,:, 1:3), 3);
+%     else
+%         imageMu = mean(handles.data.videos{i}(:,:, 1:10), 3);
+%     end
+%     temp_rois = findAreasOfInterest(imageMu, parms);    % Otsu, GLRT
+%     
+%     % filter temp_rois
+%     temp_rois = smvideo_removeOutliers(temp_rois, 'maxIntensity', 0);
+%     temp_rois = smvideo_removeOutliers(temp_rois, 'gaussSigma', 0);
+%     centroids{i} = vertcat(temp_rois.centroid);
+% end
+% 
+% % Now find overlapping spots from red to green within rmse of alignment 
+% maxDist = mean(handles.data.alignTransform.rmse);
+% maxDist = 2;
+% pairs = [];
+% for i = 1:length(centroids{1})
+%     dist = sqrt((centroids{1}(i,1) - centroids{2}(:,1)).^2 + (centroids{1}(i,2) - centroids{2}(:,2)).^2);
+%     [mindist, c2] = min(dist);
+%     if mindist <= maxDist
+%         pairs = [pairs; i,c2];
+%     end
+% end
+% 
+% npairs = size(pairs,1); 
+% channelNames = {'633nm', '532nm'};
+% figure;
+% for i = 1:2
+%     img = mean(handles.data.videos{i}(:,:,1:end),3);
+%     [x1,y1] = autoImageBC(img);
+%     subplot(1,2,i);
+%     imshow(img, 'DisplayRange', [x1,y1]);
+%     hold on
+%     scatter(centroids{i}(:,1), centroids{i}(:,2), 30,  'yo');
+%     
+%     for j = 1:npairs
+%         idx = pairs(j,i);
+%         scatter(centroids{i}(idx,1), centroids{i}(idx,2), 30,  'ro');
+%     end
+%     title(channelNames{i});
+% end
+% % disp(['nPairs': num2str(npairs)]);
+% disp(['Total number of 633nm: ', num2str(size(centroids{1},1))]); 
+% disp(['Total number of 532nm: ', num2str(size(centroids{2},1))]); 
+% disp(['Total number of colocalized: ', num2str(size(pairs,1))]); 
+% disp(['%% Coclocalized (ref 633): ', num2str(size(pairs,1)/ size(centroids{1},1)*100)]); 
+
+
+% --------------------------------------------------------------------
+function Untitled_2_Callback(hObject, eventdata, handles)
+% hObject    handle to Untitled_2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function channel1_bkg_Callback(hObject, eventdata, handles)
+% hObject    handle to channel1_bkg (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function channel2_bkg_Callback(hObject, eventdata, handles)
+% hObject    handle to channel2_bkg (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Load a background file (noise from imageJ)
+[~,~,img_bkg] = loadVideo();
+handles.data.videos{2} = img_bkg{1}
+guidata(hObject, handles);
+guiUpdateVideo(hObject, handles, 2, 0, 1);
+
+
+% --------------------------------------------------------------------
+function Untitled_3_Callback(hObject, eventdata, handles)
+% hObject    handle to Untitled_3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function append_channel1_Callback(hObject, eventdata, handles)
+% hObject    handle to append_channel1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% load new image
+[new_file, new_path, new_videos, new_time_s] = loadVideo();
+
+% Lets assume we need to realign the new video to the first video and just
+% apply it 
+[tform, ~, refObj1, refObj2] = alignImages(handles.data.videos{1}(:,:,end), new_videos{1}(:,:,1), 0);
+% apply tform
+for i = 1:size(new_videos{1},3)
+     new_videos{1}(:,:,i) = imwarp( new_videos{1}(:,:,i), refObj2,...
+        tform, 'OutputView', refObj1, 'SmoothEdges', true);
+end
+
+handles.data.videos{1} = cat(3, handles.data.videos{1}, new_videos{1});
+handles.data.videos0{1} = handles.data.videos{1};
+handles.data.time{1} = [ handles.data.time{1}; new_time_s{1} + handles.data.time{1}(end,:)];
+handles.data.frame{1} = [1; size(handles.data.time{1},1)];
+guidata(hObject, handles);
+
+% update the slider
+handles = guiInitFrameSlider(hObject, handles, 1);
+handles = guiInitBCSlider(hObject, handles, 1);
+guidata(hObject, handles);
+
+
+
+
+% --------------------------------------------------------------------
+function append_channel2_Callback(hObject, eventdata, handles)
+% hObject    handle to append_channel2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

@@ -1,30 +1,30 @@
-function handles = guiPlotTraces(hObject, handles, plotID, varargin) 
+function handles = guiPlotTraces(hObject, handles, plotID, varargin)
 % -------------------------------------------------------------------------
 % Plot Traces in smTraceViewer
 % -------------------------------------------------------------------------
 %   plotID = [1,2]. Top or Bottom Plots
-%   
-% 
-% 
+%
+%
+%
 % David S. White
-% 2022-02-08 
-% MIT 
+% 2022-02-08
+% MIT
 % -------------------------------------------------------------------------
-% 
+%
 % Notes to self, things to check for:
 % which plot? Which style? Idealization or no? Option to change colors
 
 roiIdx = handles.info.roiIndex(1);
-switch plotID 
+switch plotID
     case 1
-         figureHandle1 = handles.axes1;
-         figureHandle2 = handles.axes3;
-         plotType = handles.popupmenuView1.Value;
+        figureHandle1 = handles.axes1;
+        figureHandle2 = handles.axes3;
+        plotType = handles.popupmenuView1.Value;
         
     case 2
-         figureHandle1 = handles.axes2;
-         figureHandle2 = handles.axes4;
-         plotType = handles.popupmenuView2.Value;
+        figureHandle1 = handles.axes2;
+        figureHandle2 = handles.axes4;
+        plotType = handles.popupmenuView2.Value;
         
 end
 cla(figureHandle1);
@@ -37,15 +37,21 @@ switch plotType
         
         % Plot 1 #REORGANIZE SO CAN SWITCH PLOT2, NOT NEED TO DRAW 1 TWICE
         
-        figureHandle2.Visible = 1; 
+        figureHandle2.Visible = 1;
         
         % get time
         if plotType == 1
-            chaIdx = 1; 
+            chaIdx = 1;
         else
-            chaIdx = 2; 
+            chaIdx = 2;
         end
-        time_s = handles.data.time{chaIdx}(:,3);
+        if size(handles.data.time{chaIdx},2) == 3
+            time_s = handles.data.time{chaIdx}(:,3);
+        else
+            time_s = 1:1:length(handles.data.rois(roiIdx, chaIdx).timeSeries);
+            time_s = time_s(:);
+            handles.data.time{chaIdx} = [time_s, time_s,time_s];
+        end
         roi = handles.data.rois(roiIdx, chaIdx);
         
         % need option for color
@@ -54,11 +60,11 @@ switch plotType
         set(figureHandle1, 'XLim', [0, max(time_s)])
         figureHandle1.XLabel.String =handles.info.xLabel;
         figureHandle1.YLabel.String = handles.info.ylabel;
-        figureHandle1.Box = handles.info.box'; 
+        figureHandle1.Box = handles.info.box';
         figureHandle1.TickDir  = handles.info.TickDir;
-        figureHandle1.XGrid = handles.info.grid; 
-        figureHandle1.YGrid = handles.info.grid; 
-     
+        figureHandle1.XGrid = handles.info.grid;
+        figureHandle1.YGrid = handles.info.grid;
+        
         
         % Plot second plot (histogram) --> Should update for n states
         cla(figureHandle2)
@@ -75,6 +81,13 @@ switch plotType
         data_range = linspace(min_value, max_value, handles.info.histogramBins); % edges
         data_counts = histcounts(roi.timeSeries, [data_range, Inf]);
         
+        if length(unique(roi.timeSeries)) > 1
+            data_range = linspace(min_value, max_value, handles.info.histogramBins); % edges
+            data_counts = histcounts(roi.timeSeries, [data_range, Inf]);
+        else
+            [data_range, data_counts] = histcounts(roi.timeSeries);
+        end
+        
         bar(figureHandle2, data_range, data_counts,'FaceColor', handles.info.channelColor(chaIdx,:),...
             'EdgeColor', handles.info.channelColor(chaIdx,:), 'BarWidth', 1);
         hold(figureHandle2,'on');
@@ -89,43 +102,51 @@ switch plotType
         % controls for if ideall...
         
         if isfield(roi, 'fit') && ~isempty(roi.fit)
-       
-             % Is Highlight an Event?  MAKE INFO handles.info
-             if handles.checkboxAdjustEvents.Value && handles.info.channelIndex == chaIdx
-                 
-                 cla(figureHandle1); 
-                 event = roi.events(handles.info.currentEvent,:);
-                 s1 = event(1);
-                 s2 = event(2); 
-                 s0 = roi.fit.components(event(4),2); 
-                 plot(time_s, roi.timeSeries, '-', 'color', handles.info.backgroundColor, 'Parent', figureHandle1);
-                 hold(figureHandle1,'on');
-                 plot(time_s, roi.fit.ideal, '-', 'color', handles.info.backgroundIdealColor,...
-                     'linewidth', 1, 'Parent', figureHandle1);
-                 
-                 plot(time_s(s1:s2), roi.timeSeries(s1:s2),'-', 'linewidth', 1, 'color', handles.info.channelColor(chaIdx,:),'Parent', figureHandle1);
-                 plot(time_s(s1:s2), zeros(event(3),1)+s0, '-', 'linewidth', handles.info.highhightWidth,...
-                     'color', handles.info.highlightColor,'Parent', figureHandle1);
-                 
-                 hold(figureHandle1,'off');
-                 set(figureHandle1, 'XLim', [0, max(time_s)])
-                 figureHandle1.XLabel.String =handles.info.xLabel;
-                 figureHandle1.YLabel.String = handles.info.ylabel;
-                 figureHandle1.Box = handles.info.box';
-                 figureHandle1.TickDir  = handles.info.TickDir;
-                 figureHandle1.XGrid = handles.info.grid;
-                 figureHandle1.YGrid = handles.info.grid;
-                 
-             else
-                 
-                 hold(figureHandle1,'on');
-                 plot(time_s, roi.fit.ideal, '-', 'color', handles.info.idealColor,...
-                     'linewidth', handles.info.idealWidth, 'Parent', figureHandle1);
-                 hold(figureHandle1,'off');
-                 
-             end
-             
-             % Gaussian Plot 
+            
+            % Is Highlight an Event?  MAKE INFO handles.info
+            if handles.checkboxAdjustEvents.Value && handles.info.channelIndex == chaIdx
+                
+                cla(figureHandle1);
+                event = roi.events(handles.info.currentEvent,:);
+                s1 = event(1);
+                s2 = event(2);
+                s0 = roi.fit.components(event(4),2);
+                plot(time_s, roi.timeSeries, '-', 'color', handles.info.backgroundColor, 'Parent', figureHandle1);
+                hold(figureHandle1,'on');
+                plot(time_s, roi.fit.ideal, '-', 'color', handles.info.backgroundIdealColor,...
+                    'linewidth', 1, 'Parent', figureHandle1);
+                
+                plot(time_s(s1:s2), roi.timeSeries(s1:s2),'-', 'linewidth', 1, 'color', handles.info.channelColor(chaIdx,:),'Parent', figureHandle1);
+                plot(time_s(s1:s2), zeros(event(3),1)+s0, '-', 'linewidth', handles.info.highhightWidth,...
+                    'color', handles.info.highlightColor,'Parent', figureHandle1);
+                
+                hold(figureHandle1,'off');
+                set(figureHandle1, 'XLim', [0, max(time_s)])
+                figureHandle1.XLabel.String =handles.info.xLabel;
+                figureHandle1.YLabel.String = handles.info.ylabel;
+                figureHandle1.Box = handles.info.box';
+                figureHandle1.TickDir  = handles.info.TickDir;
+                figureHandle1.XGrid = handles.info.grid;
+                figureHandle1.YGrid = handles.info.grid;
+                
+            else
+                
+                hold(figureHandle1,'on');
+                
+                % add lines for each state
+                for i = 1:size(roi.fit.components,1)
+                    yline(roi.fit.components(i,2),'--', 'color', [0.7,0.7,0.7],  'Parent', figureHandle1);
+                end
+
+                plot(time_s, roi.fit.ideal, '-', 'color', handles.info.idealColor,...
+                    'linewidth', handles.info.idealWidth, 'Parent', figureHandle1);
+                
+                hold(figureHandle1,'off');
+                
+                
+            end
+            
+            % Gaussian Plot
             components = roi.fit.components;
             n_components = size(components,1);
             
@@ -157,6 +178,8 @@ switch plotType
         end
         
     case {2, 4}
+        
+        
         % plot AOI
         cla(figureHandle1);
         cla(figureHandle2);
@@ -168,64 +191,98 @@ switch plotType
             chaIdx = 2;
         end
         roi = handles.data.rois(roiIdx,chaIdx);
-        figureHandle2.Visible = 0; 
+        figureHandle2.Visible = 0;
         
         if isfield(roi, 'spot')
-            spots = roi.spot; 
-            % get width of figure handle
-            figureWidth = floor(figureHandle1.Position(3));
-            figureHeight = floor(figureHandle1.Position(4));
-            [spotWidth, spotHeight, nSpots] = size(roi.spot);
-            nSpotsWidth = floor(figureWidth/spotWidth);
-            nSpotsHeight =floor(figureHeight/spotHeight);
-            
-            % need a way to control the size.. 
-            width = handles.info.plotSpotWidth;
-            
-            if width > length(spots) 
-                width = length(spots);
-            end
-            width =120;
-            nSpotsTemp = nSpots;
-            while rem(nSpotsTemp,width)
-                nSpotsTemp = nSpotsTemp+1;
-            end
-            [mu, sigma] = normfit(spots(:));
-            mag = 1;
-            % [nSpotsTemp/width width];
-            out = imtile(spots, 'GridSize',[nSpotsTemp/width width], 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
-            % out = imtile(spots, 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
-            imshow(out,  'DisplayRange', [mu-sigma, mu+5*sigma], 'Parent', figureHandle1);
-            
-            % need to figure out ideal
-            % need to figure out how to make it fill the entire plot...
-            if isfield(roi, 'fit') && ~isempty(roi.fit)
+            % temp patchhhhhhh *******************************************
+            if ~isfield(roi, 'events')  || isempty(roi.events)
+                spots = roi.spot;
+                % get width of figure handle
+                figureWidth = floor(figureHandle1.Position(3));
+                figureHeight = floor(figureHandle1.Position(4));
+                [spotWidth, spotHeight, nSpots] = size(roi.spot);
+                nSpotsWidth = floor(figureWidth/spotWidth);
+                nSpotsHeight =floor(figureHeight/spotHeight);
                 
-                hold(figureHandle1,'on');
+                % need a way to control the size..
+                width = handles.info.plotSpotWidth;
                 
-                arrayMap = reshape(1:nSpotsTemp, [width, round(nSpotsTemp)/width ]);
-                arrayMap = arrayMap';
-                ss = handles.data.rois(roiIdx, chaIdx).fit.ideal;
-                
-                % need case for if all idealized...
-                boundIdx = find(ss>min(ss));
-                nX = zeros(length(boundIdx),2);
-                
-                for i = 1:length(boundIdx)
-                    j = boundIdx(i);
-                    [jy, jx] = find(arrayMap==j);
-                    nX(i,1) = jx;
-                    nX(i,2) = jy;
+                if width > length(spots)
+                    width = length(spots);
                 end
-                for i = 1:length(boundIdx)
-                    xPos = nX(i,1)*spotWidth*mag-spotWidth*mag + 0.5; 
-                    yPos = nX(i,2)*spotHeight*mag-spotHeight*mag + 0.5; 
-                    rectangle('Parent', figureHandle1, 'Position',...
-                        [xPos, yPos, (spotWidth)*mag, (spotHeight)*mag], 'EdgeColor',...
-                        handles.info.idealPlotSpotColor, 'lineWidth', handles.info.idealPlotSpotWidth);
+                width = 100;
+                nSpotsTemp = nSpots;
+                while rem(nSpotsTemp,width)
+                    nSpotsTemp = nSpotsTemp+1;
+                end
+                [mu, sigma] = normfit(spots(:));
+                mag = 1;
+                % [nSpotsTemp/width width];
+                out = imtile(spots, 'GridSize',[nSpotsTemp/width width], 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
+                %out = imtile(spots, 'GridSize',[5,2], 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
+                % out = imtile(spots, 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
+                if mu == 0
+                    imshow(out,  'DisplayRange', [0,1], 'Parent', figureHandle1);
+                else
+                    imshow(out,  'DisplayRange', [mu-sigma, mu+5*sigma], 'Parent', figureHandle1);
                 end
                 
-                hold(figureHandle1,'off');
+                % need to figure out ideal
+                % need to figure out how to make it fill the entire plot...
+                if isfield(roi, 'fit') && ~isempty(roi.fit)
+                    
+                    hold(figureHandle1,'on');
+                    
+                    arrayMap = reshape(1:nSpotsTemp, [width, round(nSpotsTemp)/width ]);
+                    arrayMap = arrayMap';
+                    ss = handles.data.rois(roiIdx, chaIdx).fit.ideal;
+                    
+                    % need case for if all idealized...
+                    boundIdx = find(ss>min(ss));
+                    nX = zeros(length(boundIdx),2);
+                    
+                    for i = 1:length(boundIdx)
+                        j = boundIdx(i);
+                        [jy, jx] = find(arrayMap==j);
+                        nX(i,1) = jx;
+                        nX(i,2) = jy;
+                    end
+                    for i = 1:length(boundIdx)
+                        xPos = nX(i,1)*spotWidth*mag-spotWidth*mag + 0.5;
+                        yPos = nX(i,2)*spotHeight*mag-spotHeight*mag + 0.5;
+                        rectangle('Parent', figureHandle1, 'Position',...
+                            [xPos, yPos, (spotWidth)*mag, (spotHeight)*mag], 'EdgeColor',...
+                            handles.info.idealPlotSpotColor, 'lineWidth', handles.info.idealPlotSpotWidth);
+                    end
+                    
+                    hold(figureHandle1,'off');
+                end
+                
+            else
+                events = roi.events; 
+                nEvents = size(events,1);
+                [spotWidth, spotHeight, ~] = size(roi.spot);
+                imageMu = zeros(spotWidth, spotHeight, nEvents); 
+                for k = 1:nEvents
+                    s1 = events(k,1); 
+                    s2 = events(k,2);
+                    imageMu(:,:,k) = mean(roi.spot(:,:,s1:s2),3);
+                end
+                [mu, sigma] = normfit(imageMu(:));
+                mag = 1; 
+                width = 10; 
+                if nEvents < width
+                    gridSize = [1, nEvents];
+                else
+                    gridSize = [ceil(nEvents/width), width];
+                end
+                out = imtile(imageMu, 'GridSize',gridSize,'thumbnailSize', [spotWidth*mag, spotHeight*mag],...
+                    'BorderSize', 1);
+                if mu == 0
+                    imshow(out,  'DisplayRange', [0,1], 'Parent', figureHandle1);
+                else
+                    imshow(out,  'DisplayRange', [mu-sigma, mu+5*sigma], 'Parent', figureHandle1);
+                end
             end
             
         end

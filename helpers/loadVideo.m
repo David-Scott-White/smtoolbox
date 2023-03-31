@@ -38,12 +38,18 @@ if contains(file,'.ome')
     end
 else
     videos{1} = loadtiff([path, file]); 
-    time_s{1} = 1:size(videos,3);  
+    time_s{1} = 1:size(videos,3);
 end
 
 % Convert  to uint16 (or greyscale?)
 for i = 1:length(videos)
     videos{i} = uint16(videos{i});
+    
+    if min(min(videos{i}(:,:,1))) == 0
+        for j = 1:size(videos{i},3)
+            videos{i}(:,:,j) = videos{i}(:,:,j) + 1;
+        end
+    end
 end
 
 end

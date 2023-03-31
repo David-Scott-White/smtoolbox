@@ -21,7 +21,7 @@ function [comps,ideal,class,metrics] = skm(x,varargin)
 % check inputs
 minK = 1;
 maxK = 10;
-maxIter = 50;
+maxIter = 100;
 tol = 1e-6;
 yStart = [];
 oFxn = 'BIC_GMM';
@@ -147,7 +147,7 @@ switch skmOption
                 
             end
         end
-        % figure; plot(llh)
+        figure; plot(llh)
         [comps,ideal,class] = computeCenters(x,vPath);
 end
 end

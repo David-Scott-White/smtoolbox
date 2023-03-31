@@ -11,7 +11,7 @@ if nargin < 2 || isempty(aoi)
     aoi.radius = 2;
     aoi.fp = 20;
     aoi.gauss = 1;
-    aoi.tol = 1e-6;
+    aoi.tol = 1e-4;
     aoi.method = 'GLRT';
     aoi.minSeperation = aoi.radius;
 end
@@ -19,8 +19,9 @@ end
 if nargin < 3 || isempty(showResult)
     showResult = 0;
 end
+
 % MANUALLY SET ----------------------
-aoi.minSeperation = 2;
+aoi.minSeperation = 5;
 image = double(image);
 
 switch aoi.method
@@ -29,6 +30,7 @@ switch aoi.method
         [BW, ~, FAR] = GLRTfiltering (image, aoi.area, aoi.radius, aoi.fp);
         BW = bwareaopen(BW, aoi.radius, 8);
         BW = bwareafilt(BW, [1, 10]);
+        
         stats = regionprops(BW,FAR, 'WeightedCentroid', 'MeanIntensity');
         
     case 'Otsu'
@@ -61,19 +63,12 @@ end
 boundingBox = makeBoundingBox(centroids, aoi.area);
 
 if aoi.gauss
+    aoiSigma = centroids*0;
     gauss = cell(numROIs,1);
     wbGauss = waitbar(0, 'Gaussian refinement...');
     for i = 1:numROIs
         c = centroids(i,:) - boundingBox(i,1:2)+1;
         imageTemp = imcrop(image, boundingBox(i,:));
-        
-        %bb = boundingBox(i,:); 
-        %bb(1) = bb(1)-2; 
-        %bb(2) = bb(2)-2; 
-        %bb(3:4) = bb(3:4)+4;
-        
-        %imageTemp = imcrop(image, bb);
-        %figure; imshow(im, [])
         
         params0 = [c(1), c(2), aoi.radius-1, aoi.radius-1, imageTemp(round(c(1)), round(c(2))), 0];
         [params,~] = fitgaussian2d(imageTemp, params0, 2, aoi.tol);
@@ -83,11 +78,10 @@ if aoi.gauss
             centroids(i,1)= params(1) + boundingBox(i,1)-1;
             centroids(i,2)= params(2) + boundingBox(i,2)-1;
             boundingBox(i,:) = makeBoundingBox(centroids(i,:), aoi.area);
+            aoiSigma(i,:) = params(3:4);
         else
             % Remove the AOI? Probably empty or multiple occupied
         end
-       % R2 = 0;
-        % gauss{i} = [params, R2];
         waitbar(i/numROIs, wbGauss);
     end
     close(wbGauss)
@@ -96,21 +90,17 @@ end
 % update the bounding box
 boundingBox = makeBoundingBox(centroids, aoi.area);
 
-% will need to add the heigth and width of image to account for bounding
-% boxes outside of the image range...same for transformAOI
-
 % Make roi struct
 rois = struct;
 for i = 1:numROIs
     rois(i,1).Centroid = centroids(i,:);
+    % rois(i,1).sigma = aoiSigma(i,1); % they are the same value
     rois(i,1).boundingBox = boundingBox(i,:);
     rois(i,1).pixelList = boundBoxToPixels(rois(i,1).boundingBox );
 end
 
 if showResult
-    [xmin, xmax] = autoImageBC(image);
-    figure; hold on
-    imshow(image, 'DisplayRange', [xmin, xmax]); hold on
+    autoImageBC(image, 1); hold on
     for i = 1:length(rois)
         rectangle('Position', rois(i).boundingBox(1,:),...
             'EdgeColor','r', 'LineWidth', 1, 'Curvature',[0 0]);

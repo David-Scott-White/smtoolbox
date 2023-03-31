@@ -97,7 +97,7 @@ end
 if ischar(bins)
     switch bins
         case 'opt'
-            bins = calcoptimalhistbins(dwells', 30, length(dwells));
+            bins = calcoptimalhistbins(dwells', 50, []);
             if bins < 3
                 bins = 'auto';
             end
@@ -262,7 +262,7 @@ if p == 1
         yUpper1 = expPDF1(xValues,dwellFits.monoExpCI(2)).*areaAdjust;
         errorPlot(xValues,yValues(:,1), [yLower1, yUpper1], 'plotColor', [0, 0.4470, 0.7410]);
     else
-        plot(xValues,yValues(:,1),'-','LineWidth',1, 'color', [0, 0.4470, 0.7410]);
+        plot(xValues,yValues(:,1),'-','LineWidth',2, 'color', [0, 0.4470, 0.7410]);
     end
     
 elseif p == 2
@@ -277,10 +277,10 @@ elseif p == 2
         
     else
         if sum(yValues(:,1))> 0
-            plot(xValues,yValues(:,1),'--','LineWidth', 1, 'color',[0, 0.4470, 0.7410]); hold on;
+            plot(xValues,yValues(:,1),'--','LineWidth', 2, 'color',[0, 0.4470, 0.7410]); hold on;
         end
         if sum(yValues(:,2))> 0
-            plot(xValues,yValues(:,2),'-','LineWidth', 1, 'color',[0.8500 0.3250 0.0980]);
+            plot(xValues,yValues(:,2),'-','LineWidth', 2, 'color',[0.8500 0.3250 0.0980]);
         end
         set(gca ,'Layer', 'Top');
     end
@@ -363,8 +363,9 @@ switch normalization
                 yMax = ymax*1.1;
         end
 end
-ylim([yMin, yMax]);
+% ylim([yMin, yMax]);
 xlabel('Time (s)');
 xlim([0, binCenters(end)*1.1])
+set(gca, 'fontname', 'Arial')
 
 end

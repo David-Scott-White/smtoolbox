@@ -3,6 +3,8 @@ function [state_sequence,p0,A] = simulateQ(Q, emission_states, duration_s, frame
 % David S. White
 % dwhite7@wisc.edu
 %
+%
+% License: G
 % Updates:
 % --------
 % 2019-07-03    DSW wrote the code

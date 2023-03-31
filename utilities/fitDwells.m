@@ -1,4 +1,4 @@
-function [dwellFits, yPDF] = fitDwells(dwells, nExp, bootStrap, fitLimits)
+function [dwellFits, yPDF] = fitDwells(dwells, nExp, bootStrap, fitLimits, tauGuess)
 % David S. White
 % dwhite7@wisc.edu
 %
@@ -6,7 +6,8 @@ function [dwellFits, yPDF] = fitDwells(dwells, nExp, bootStrap, fitLimits)
 % previous fitExpDist.m and fitExpDist2.m from 01/21
 %
 % see plotDwells.m
-%
+%0
+
 % Updates:
 % --------
 % 2021-02-04    DSW wrote code
@@ -34,12 +35,14 @@ nDwells = length(dwells);
 if ~exist('nExp','var') || isempty(nExp); nExp = 2; end
 if ~exist('bootStrap','var') || isempty(bootStrap); bootStrap = 0; nBoot=0; else; nBoot=1000; end
 if ~exist('fitLimits', 'var') || isempty(fitLimits); fitLimits = []; end
+if ~exist('tauGuess', 'var') || isempty(tauGuess); tauGuess = []; end
 
 % output variable
 dwellFits = struct;
 dwellFits.nDwells = nDwells;
 dwellFits.nBoot = nBoot;
 dwellFits.limits = fitLimits;
+dwellFits.tauGuess = tauGuess;
 
 expPDF1 = @(t,tau1) 1/tau1*exp(-t/tau1);
 expPDF2 = @(t,A1,tau1,tau2) A1.*expPDF1(t,tau1) + (1-A1).*expPDF1(t,tau2);
@@ -60,7 +63,12 @@ pci = cell(nExp,1);
 
 % biExp
 if nExp > 1
-    [phat{2},pci{2}] = mle(dwells,'pdf',expPDF2,'start', [0.5 xmu/guessFactor, xmu*guessFactor],...
+    if isempty(tauGuess)
+        start = [0.5, mean(dwells)/guessFactor, mean(dwells)*guessFactor];
+    else
+        start = tauGuess;
+    end
+    [phat{2},pci{2}] = mle(dwells,'pdf',expPDF2,'start', start,...
         'lowerbound',[1e-3, lb, lb],'upperbound',[0.999, ub, ub], ...
            'Options',statset('MaxIter',1e5, 'MaxFunEvals', 1e5));
 end
@@ -124,7 +132,11 @@ if bootStrap
         wb = waitbar(0, 'Bootstrapping Biexponential...');
         for i= 1:nBoot
             x = dwells(idx(:,i));
-            start = [0.5,mean(x)/guessFactor, mean(x)*guessFactor];
+            if isempty(tauGuess)
+                start = [0.5, mean(x)/guessFactor, mean(x)*guessFactor];
+            else
+                start = tauGuess;
+            end
             if start(2) < lb; start(2) = lb; end
             if start(3) > ub; start(3) = ub; end
             phatTemp2(i,1:3) = mle(dwells(idx(:,i)),'pdf',expPDF2,'start', [start(1), start(2), start(3)],...
@@ -168,7 +180,8 @@ dwellFits.monoExpPDF = P1;
 dwellFits.monoExpLL = sum(log(P1));
 
 if nExp > 1 % (sort with larger amplitude first)
-    if phat{2}(1) >= 0.5
+    % if phat{2}(1) >= 0.5
+    if phat{2}(2) < phat{2}(3)
         dwellFits.biExpAmp = [phat{2}(1),1-phat{2}(1)];
         dwellFits.biExpTau = [phat{2}(2),phat{2}(3)];
         if bootStrap
@@ -203,8 +216,10 @@ if nExp > 1 % (sort with larger amplitude first)
     
     % Compare the fits.
     % 1. Loglikelihood ratio test (95% CI)
+    
+    % bootstreapped o
     LLR = 2*(dwellFits.biExpLL-dwellFits.monoExpLL);
-    p = 1 - chi2cdf(LLR,2);
+    p = 1 - chi2cdf(LLR, 2);
     if p > 0.05
         best = 1;
     else

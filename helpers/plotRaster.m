@@ -25,9 +25,11 @@ function h = plotRaster(events, varargin)
 %%
 % Set Default parameters
 sortTraces  = 1;   % boolean
-colorScheme = 'k'; % need a gradient for multiple states
-frameRate_s = 0;   % else, returns frames
-
+colorScheme = [0.7,0.7,0.7]; % need a gradient for multiple states
+frameRate_s = 1;   % else, returns frames
+modFrameRate = 0;
+fractionBound = []; 
+fractionBoundColor = [0.8500, 0.3250, 0.0980]; 
 for i = 1:2:length(varargin)-1
     switch varargin{i}
         case 'sortTraces'
@@ -36,26 +38,32 @@ for i = 1:2:length(varargin)-1
             colorScheme = varargin{i+1};
         case 'frameRate_s'
             frameRate_s = varargin{i+1};
+            modFrameRate = 1;
+        case 'fractionBound'
+            fractionBound = varargin{i+1}; 
     end
 end
 
 concatEvents = cell2mat(events);
 minState = min(concatEvents(:,4));
 maxFrame = max(concatEvents(:,2));
-% nEvents = size(concatEvents); 
+% nEvents = size(concatEvents);
 
 % Sort traces?
 N = size(events,1);
 if sortTraces
     firstEventFrame = zeros(N,1);
     for i = 1:N
-        if size(events{i},1) == 1
+        if isempty(events{i})
+            firstEventFrame(i) = maxFrame+1;
+        elseif events{i}(1)==0
+            firstEventFrame(i) = maxFrame+1;
+        elseif size(events{i},1) == 1
             if events{i}(4) == minState
                 firstEventFrame(i) = events{i}(2);
             else
                 firstEventFrame(i) = events{i}(1);
             end
-            
         else
             if events{i}(1,4) > min(events{i}(:,4))
                 firstEventFrame(i) = 1;
@@ -68,31 +76,62 @@ if sortTraces
     events = events(sortedIdx, :);
 end
 
-h = figure; hold on
-xlim([0, maxFrame]);
-ylim([0.5, N])
+h = figure; 
+% if ~isempty(fractionBound)
+%     yyaxis left
+% end
+ylabel('Molecule')
+hold on
+xlim([0, maxFrame*frameRate_s]);
+ylim([-1, N])
 for i = 1:N
     for j = 1:size(events{i},1)
         if events{i}(j,4) > minState
-            s0 = events{i}(j,1);
-            s1 = events{i}(j,3);
+            s0 = events{i}(j,1)*frameRate_s;
+            s1 = events{i}(j,3)*frameRate_s;
             % xstart, ystart, xlength, ylength
             rectangle('Position',[s0, i-0.5, s1, 1], 'EdgeColor', colorScheme, 'FaceColor', colorScheme);
         end
     end
 end
 
-if frameRate_s
-    x1 = xticklabels; 
-    x2 = x1; 
-    for i = 1:length(x1)
-        x2{i} = num2str(str2double(x1{i})*frameRate_s);
+% should add text to top left for number of molecuels in plot 
+
+if ~isempty(fractionBound)
+    %     yyaxis right
+    %     ylabel('Fraction Bound')
+    hold on
+    if modFrameRate
+        time_s = frameRate_s:frameRate_s:(length(fractionBound)*frameRate_s);
+        plot(time_s, fractionBound, '-', 'color', fractionBoundColor, 'linewidth',2);
+    else
+        plot(fractionBound, '-', 'color', fractionBoundColor, 'linewidth',2);
     end
+%     if sum(fractionBound>1)
+%         ylim([-1, N])
+%         ylabel('Molecules Bound')
+%     else
+%         ylim([0,1])
+%         ylabel('Fraction Bound')
+%     end
+end
+
+
+if modFrameRate
+%     x1 = xticklabels; 
+%     x2 = x1; 
+%     for i = 1:length(x1)
+%         x2{i} = num2str(str2double(x1{i})*frameRate_s);
+%     end
     xlabel('Time (s)');
-    set(gca,'XTickLabel',x2);
+    %set(gca,'XTickLabel',x2);
 else
     xlabel('Frames');
 end
-ylabel('Molecule');
+% ylabel('Molecule');
 set(gca, 'tickdir', 'out');
+
+xL=xlim;
+yL=ylim;
+text(xL(1),0.99*yL(2),['N = ', num2str(length(events))],'HorizontalAlignment','left','VerticalAlignment','top')
 

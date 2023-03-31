@@ -17,6 +17,8 @@ time_s = 0;
 filePath = 0; 
 displayRange = []; 
 
+fontSize = 18; 
+
 for i = 1:2:length(varargin)-1
     switch varargin{i}
         case 'frameRate'
@@ -41,7 +43,7 @@ for i = 1:2:length(varargin)-1
 end
 
 if ~filePath
-    [file, path] = uiputfile('video.mp4');
+    % [file, path] = uiputfile('video.mp4');
     filePath = [path,file]; 
 end
 
@@ -62,18 +64,29 @@ if ~isempty(figExist)
     close('Video Preview');
 end
 
+[xn, yn] = size(video(:,:,1));
 for i = 1:nFrames
     if i == 1
-        hFig = figure('Name', 'Video Preview', 'NumberTitle', 'off');
-        %x0 = hFig.Position;
-        %hFig.Position = [x0(1), x0(2), xVideo*2, yVideo*2];
-        imshow(video(:,:,i), 'DisplayRange', displayRange, 'Border', 'tight',...
-            'InitialMagnification', 1000 , 'Interpolation','nearest');
+        hFig = figure('Name', 'Video Preview', 'NumberTitle', 'off', 'Visible', 'Off', 'ToolBar', 'None', 'MenuBar', 'None');
+%         imshow(video(:,:,i), 'DisplayRange', displayRange, 'Border', 'tight',...
+%             'InitialMagnification', 100 , 'Interpolation','nearest');
+        
+         imshow(video(:,:,i), 'DisplayRange', displayRange, 'Border', 'tight',...
+            'InitialMagnification', 100);
+        
+        % pixels_screen = get(0,'screensize');
+        
+        hFig.Position(1) = 0;
+        hFig.Position(2) = 0;
+        hFig.Position(3) = xn*1;
+        hFig.Position(4) = yn*1;
+        hFig.Visible = 'on';
+        
         pause(1)
         hold on;
         if aoi
             for j = 1:length(aoi)
-                rectangle('Position', aoi(j,:), 'EdgeColor', 'r', 'linewidth', 1);
+                rectangle('Position', aoi(j,:), 'EdgeColor', 'r', 'linewidth', 0.5);
             end
             pause(1); 
         end
@@ -86,8 +99,8 @@ for i = 1:nFrames
             p1 = xVideo-10-pixels;
             sbX = p1:p0;
             sbY = sbX*0 + yVideo-10;
-            plot(sbX, sbY,'-w','linewidth',1)
-            text(p0, yVideo-20, [num2str(scaleBar), '\mum'], 'Color', 'w','FontSize',12, 'HorizontalAlignment', 'right');
+            plot(sbX, sbY,'-w','linewidth', 3)
+            text(p0, yVideo-25, [num2str(scaleBar), '\mum'], 'Color', 'w','FontSize', fontSize, 'HorizontalAlignment', 'right','FontName','Helvetica');
         end
         
         % no need to update everything else % add in options for display
@@ -95,7 +108,7 @@ for i = 1:nFrames
             s = seconds(round(time_s));
             s.Format = 'hh:mm:ss'; 
             timestr = char(s(i));
-            text(10,10,timestr,'Color','w','FontSize',14);
+            text(10,10, timestr,'Color','w','FontSize', fontSize, 'FontName', 'Helvetica');
             pause(1)
         end
         

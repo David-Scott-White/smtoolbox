@@ -102,6 +102,9 @@ end
 % estimate Gaussian noise by low pass Haar wavelet transform. 
 % see ref 2 for details.
 sorted_wavelet = sort(abs(diff(data) / 1.4));
+if isempty(sorted_wavelet)
+    disp('break')
+end
 sigma_noise = sorted_wavelet(round(0.682 * (n_data_points-1)));
 
 % Initialize Boolean Sequence of Change Points (CP) locations.

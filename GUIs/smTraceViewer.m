@@ -427,30 +427,28 @@ switch eventdata.Key
                 handles.data.rois(roiIdx, i).status = 1; % assign to all channels
             end
             handles.info.nselected =   [handles.info.nselected + 1, handles.info.nselected + 1];
+        
         end
         % guiUpdateTraceInfo(hObject, handles);
         handles.textStatus.String = '1';
         totalSelected = handles.info.nselected(handles.info.channelIndex);
-        newStr = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
-        handles.textSelectedPercent.String = newStr;
+        % handles.textSelectedPercent.String = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
+        handles.textSelectedPercent.String = num2str(totalSelected);
         guidata(hObject, handles);
         
     case  'downarrow' % NEED BUTTON TO APPLY TO ALL CHANNELS OR ONLY CURRENT
-        roiIdx = handles.info.roiIndex;
-        if  handles.data.rois(roiIdx, handles.info.channelIndex).status == 1
+        if  handles.data.rois(handles.info.roiIndex, handles.info.channelIndex).status == 1
             for i = 1:handles.info.nchannels
-                handles.data.rois(roiIdx, i).status = 0;
+                handles.data.rois(handles.info.roiIndex, i).status = 0;
             end
-            handles.info.nselected =  [handles.info.nselected - 1, handles.info.nselected - 1];
+            handles.info.nselected = handles.info.nselected-1;
         end
-        % guiUpdateTraceInfo(hObject, handles); % should replace this with the specific update. 
+        % guiUpdateTraceInfo(hObject, handles); % should replace this with the specific update.
         handles.textStatus.String = '0';
-        totalSelected = handles.info.nselected(handles.info.channelIndex);
-        newStr = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
-        handles.textSelectedPercent.String = newStr;
-        tic
+        %totalSelected = handles.info.nselected(handles.info.channelIndex);
+        %newStr = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
+        %handles.textSelectedPercent.String = newStr;
         guidata(hObject, handles);
-        toc
         
     case 'space'
         j = handles.popupmenuChannel.Value +    1;
@@ -463,6 +461,13 @@ switch eventdata.Key
         
     case {'a'}
         handles = guiIdealizeTrace(hObject, handles);
+        guidata(hObject, handles);
+        guiPlotTraces(hObject, handles, 1); % should be smarter to only redraw one
+        guiPlotTraces(hObject, handles, 2);
+        guiUpdateTraceInfo(hObject, handles);
+        
+    case {'c'}
+        handles = guiClearIdealization(hObject, handles);
         guidata(hObject, handles);
         guiPlotTraces(hObject, handles, 1); % should be smarter to only redraw one
         guiPlotTraces(hObject, handles, 2);

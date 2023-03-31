@@ -12,9 +12,9 @@ function h = publishFigure(h, varargin)
 % set defaults
 
 saveOnly = 0; 
-figureName = 'figure';
+figureName = [];
 figureSize = [];
-fontName = 'Helvetica';
+fontName = 'Arial';
 fontSize = 7;
 legendFontSize = 5;
 legendTokenSize = [10, 6];
@@ -51,8 +51,14 @@ for i = 1:2:length(varargin)-1
 end
 
 if ~saveOnly
-    set(gca,'fontsize',fontSize,'fontname', fontName, 'tickdir',tickDir, 'box',box,...
-        'XColor', plotColor, 'YColor', plotColor);
+%     set(gca,'fontsize',fontSize,'fontname', fontName, 'tickdir',tickDir, 'box',box,...
+%         'XColor', plotColor, 'YColor', plotColor);
+    
+        set(gca,'fontsize',fontSize,'fontname', fontName, 'tickdir',tickDir, 'box',box,...
+        'XColor', plotColor);
+    
+    set(h, 'DefaultAxesFontName', fontName);
+    set(h, 'DefaultTextFontName', fontName);
     
     % h.FontSize = fontSize;
     % h.FontName = fontName;
@@ -80,6 +86,10 @@ if ~saveOnly
     end
 end
 % Save (as a .mat, .pdf, and .png);
+if isempty(figureName)
+    [file,path] = uiputfile('.fig'); 
+    figureName = [path,file(1:end-4)];
+end
 savefig(h, figureName);
 print(h, figureName,'-dpdf')
 % print(h,'-dpng', '-r300', figureName); % issue with not recognizing font...
@@ -91,8 +101,8 @@ exportgraphics(h, [figureName, '.png'], 'Resolution', 300);
 %exportgraphics(h, [figureName, '.pdf'])
 
 if showImage
-    close(h)
-    A = imshow(imread([figureName,'.png']));
+    close(h);
+    A = imshow(imread([figureName,'.png']), 'InitialMagnification', 100);
 end
 
 end

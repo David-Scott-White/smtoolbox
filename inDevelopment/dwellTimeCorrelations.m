@@ -18,8 +18,8 @@ function [dwellPairs, r, n, p, xLabels, yLabels] = dwellTimeCorrelations(events,
 
 xLabels = {'log_1_0(\langleBound (s)\rangle)', 'log_1_0(Unbound_i (s))',...
     'log_1_0(Unbound_i (s))', 'log_1_0(Bound_i (s))'};
-yLabels = {'log_1_0(\langleUnound (s)\rangle)', 'log_1_0(Bound_i_+_1 (s))',...
-    'log_1_0(Unbound_i_+_2 (s))', 'log_1_0(Bound_i_+_2 (s))'};
+yLabels = {'log_1_0(\langleUnbound (s)\rangle)', 'log_1_0(Bound_i_+_1 (s))',...
+    'log_1_0(Unbound_i_+_1 (s))', 'log_1_0(Bound_i_+_1 (s))'};
 
 N = size(events, 1);
 dwellPairs = cell(4,1);

@@ -1,8 +1,12 @@
 function [boundingBox, pixelList] = makeBoundingBox(centroids, diameter)
 
-radius = (diameter-1)/2;
-if radius > 1 && mod(radius,2) 
-    radius = radius + 0.5;
+if diameter == 2
+    radius = 1; 
+else
+    radius = (diameter-1)/2;
+    if radius > 1 && mod(radius,2)
+        radius = radius + 0.5;
+    end
 end
 
 numCentroids = size(centroids,1);

@@ -118,7 +118,7 @@ while ~done
     % check for termination
     % terminate 2 greater than max value
     [best_f,best_k] = max(outF);
-    if best_k + 2 == k
+    if best_k + 1 == k
         done = 1;
     else
         % iterate

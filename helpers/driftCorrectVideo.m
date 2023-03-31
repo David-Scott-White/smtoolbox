@@ -69,22 +69,35 @@ if computeTform
     % check for outliers
     figure;
     xx = 1:nIdx;
-    driftList2 = driftList; 
+    driftList2 = driftList;
     for k = 1:2
         z = filloutliers(driftList(:, k),'nearest','mean');
-        zz = smooth(xx, z, 0.3, 'rloess');
+        %z = driftList(:, k)
+        zz = smooth(xx, z, 0.1, 'moving');
+        % zz = z;
         driftList2(:,k) = zz;
-        driftList2(1,k) = 0; 
+        driftList2(1,k) = 0;
         
-        subplot(1,2,k); hold on; 
+        subplot(1,2,k); hold on;
         scatter(xx, z, 10, 'MarkerFaceColor', [0.8, 0.8, 0.8], 'MarkerEdgeColor', 'k');
         plot(xx, zz,'-r', 'linewidth',1)
+        
+        if k == 1
+            title('Drift: X (pixels)')
+        else
+            title('Drift: Y (pixels)')
+        end
+        xlabel('Frame Index')
+        ylabel('Pixels')
     end
+    close(wb1)
     for i = 1:nIdx
         allTForm{i}.T(3,1:2) = driftList2(i,:);
     end
-    close(wb1)
 end
+% for i = 1:nIdx
+%     allTForm{i}.T(3,1:2) = driftList2(i,:);
+% end
 
 % apply the drift correction
 wb2 = waitbar(0, 'Applying Transform');
@@ -92,9 +105,9 @@ for i = 1:nIdx
     for j = vidIndex(i,1): vidIndex(i,2)
         if i > 1
             
-        newVideo(:,:,j) = imwarp(video(:,:,j), refObj, allTForm{i}, 'OutputView', refObj, 'SmoothEdges', false);
+            newVideo(:,:,j) = imwarp(video(:,:,j), refObj, allTForm{i}, 'OutputView', refObj, 'SmoothEdges', false);
         else
-             newVideo(:,:,j) = video(:,:,j);
+            newVideo(:,:,j) = video(:,:,j);
         end
     end
     waitbar(i/nIdx, wb2);

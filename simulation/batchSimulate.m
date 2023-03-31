@@ -1,11 +1,11 @@
 function simulation = batchSimulate(Q, states, observationTime_s,...
-                                        frameRate_s, numSimulations)
+    frameRate_s, numSimulations)
 % -------------------------------------------------------------------------
 % Batch simulation
 % -------------------------------------------------------------------------
-% 
-% Wrapper around simulateQ to make my life easier. 
-% 
+%
+% Wrapper around simulateQ to make my life easier.
+%
 % inputs.
 %   see simulateQ
 %
@@ -13,20 +13,22 @@ function simulation = batchSimulate(Q, states, observationTime_s,...
 %   traces
 %   events
 %   dwells
-% 
+%
 % David S. White
 % 2021-11-03
 % MIT
 % -------------------------------------------------------------------------
-% 
-% 
+%
+%
 uniqueStates = unique(states);
-k = length(uniqueStates); 
-traces = cell(numSimulations,1); 
-events = cell(numSimulations,1); 
-dwells = cell(k,1); 
+k = length(uniqueStates);
+traces = cell(numSimulations,1);
+events = cell(numSimulations,1);
+dwells = cell(k,1);
 frameRate_hz = 1/frameRate_s;
-wb = waitbar(0, 'Running Simulations...');
+if numSimulations > 10
+    wb = waitbar(0, 'Running Simulations...');
+end
 for i = 1:numSimulations
     [traces{i}, p0] = simulateQ(Q, states, observationTime_s, frameRate_hz);
     events{i} = findEvents(traces{i});
@@ -36,13 +38,17 @@ for i = 1:numSimulations
             dwells{j} = [dwells{j};  events{i}(idx,3)*frameRate_s];
         end
     end
-    waitbar(i/numSimulations, wb);
+    if numSimulations > 10
+        waitbar(i/numSimulations, wb);
+    end
 end
-close(wb);
+if numSimulations > 10
+    close(wb);
+end
 
 simulation = struct;
 model.frame_rate_s  = frameRate_s;
-simulation.traces = traces; 
-simulation.events = events; 
-simulation.dwells = dwells; 
-simulation.stateOcc = p0; 
+simulation.traces = traces;
+simulation.events = events;
+simulation.dwells = dwells;
+simulation.stateOcc = p0;
