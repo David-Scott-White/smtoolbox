@@ -50,6 +50,7 @@ for i = 1:2:length(varargin)-1
     end
 end
 
+
 if ~saveOnly
 %     set(gca,'fontsize',fontSize,'fontname', fontName, 'tickdir',tickDir, 'box',box,...
 %         'XColor', plotColor, 'YColor', plotColor);
@@ -85,13 +86,17 @@ if ~saveOnly
         end
     end
 end
+
+% move axes on top of data
+set(gca, 'Layer', 'top')
+
 % Save (as a .mat, .pdf, and .png);
 if isempty(figureName)
     [file,path] = uiputfile('.fig'); 
     figureName = [path,file(1:end-4)];
 end
-savefig(h, figureName);
-print(h, figureName,'-dpdf')
+% savefig(h, figureName);
+print(h, figureName,'-dpdf',  '-r0')
 % print(h,'-dpng', '-r300', figureName); % issue with not recognizing font...
 exportgraphics(h, [figureName, '.png'], 'Resolution', 300);
 

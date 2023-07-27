@@ -198,33 +198,58 @@ switch plotType
             if ~isfield(roi, 'events')  || isempty(roi.events)
                 spots = roi.spot;
                 % get width of figure handle
-                figureWidth = floor(figureHandle1.Position(3));
-                figureHeight = floor(figureHandle1.Position(4));
-                [spotWidth, spotHeight, nSpots] = size(roi.spot);
-                nSpotsWidth = floor(figureWidth/spotWidth);
-                nSpotsHeight =floor(figureHeight/spotHeight);
+                %figureWidth = floor(figureHandle1.Position(3));
+                %figureHeight = floor(figureHandle1.Position(4));
+                %[spotWidth, spotHeight, nSpots] = size(roi.spot);
+                %nSpotsWidth = floor(figureWidth/spotWidth);
+                %nSpotsHeight =floor(figureHeight/spotHeight);
                 
                 % need a way to control the size..
-                width = handles.info.plotSpotWidth;
+                %width = handles.info.plotSpotWidth;
                 
-                if width > length(spots)
-                    width = length(spots);
-                end
-                width = 100;
-                nSpotsTemp = nSpots;
-                while rem(nSpotsTemp,width)
-                    nSpotsTemp = nSpotsTemp+1;
-                end
-                [mu, sigma] = normfit(spots(:));
-                mag = 1;
+                %if width > length(spots)
+                %    width = length(spots);
+                %end
+                %width = 100;
+                %nSpotsTemp = nSpots;
+                %while rem(nSpotsTemp,width)
+                %    nSpotsTemp = nSpotsTemp+1;
+                %end
+                %[mu, sigma] = normfit(spots(:));
+                %mag = 1;
                 % [nSpotsTemp/width width];
-                out = imtile(spots, 'GridSize',[nSpotsTemp/width width], 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
-                %out = imtile(spots, 'GridSize',[5,2], 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
+                %out = imtile(spots, 'GridSize',[nSpotsTemp/width width], 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
+                % out = imtile(spots, 'GridSize',[5,2], 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
                 % out = imtile(spots, 'thumbnailSize', [spotWidth*mag, spotHeight*mag]);
-                if mu == 0
-                    imshow(out,  'DisplayRange', [0,1], 'Parent', figureHandle1);
+                
+                
+                im = roi.spot;
+                [mu,sigma] = normfit(im(:));
+                
+                if size(im,3) > 10
+                    %nImages = size(im,3);
+                    nImages = ceil(size(im,3)/10)*10;
+                    n1 = 1:ceil(sqrt(nImages));
+                    n2 = ceil(nImages./n1);
+                    n3 = n2./n1;
+                    figureHandle1.Units = 'pixels';
+                    w = figureHandle1.Position(3);
+                    h = figureHandle1.Position(4);
+                    figureHandle1.Units = 'normalized';
+                    aspectratio = w/h;
+                    [~,i] = min(abs(aspectratio-n3));
+                    ncol = n2(i);
+                    nrow = n1(i);
                 else
-                    imshow(out,  'DisplayRange', [mu-sigma, mu+5*sigma], 'Parent', figureHandle1);
+                    ncol = size(im,3);
+                    nrow = 1;
+                end
+                im2 = imtile(im, 'GridSize', [nrow, ncol]);
+
+                if mu == 0
+                    imshow(im2,  'DisplayRange', [0,1], 'Parent', figureHandle1);
+                else
+                    imshow(im2,  'DisplayRange', [mu-sigma, mu+6*sigma], 'Parent', figureHandle1);
                 end
                 
                 % need to figure out ideal
@@ -262,6 +287,8 @@ switch plotType
                 events = roi.events; 
                 nEvents = size(events,1);
                 [spotWidth, spotHeight, ~] = size(roi.spot);
+                
+                
                 imageMu = zeros(spotWidth, spotHeight, nEvents); 
                 for k = 1:nEvents
                     s1 = events(k,1); 
@@ -269,19 +296,32 @@ switch plotType
                     imageMu(:,:,k) = mean(roi.spot(:,:,s1:s2),3);
                 end
                 [mu, sigma] = normfit(imageMu(:));
-                mag = 1; 
-                width = 10; 
-                if nEvents < width
-                    gridSize = [1, nEvents];
+                
+                
+                if nEvents > 5
+                    %nImages = size(im,3);
+                    %nImages = ceil(size(nEvents,3)/10)*10;
+                    n1 = 1:ceil(sqrt(nEvents));
+                    n2 = ceil(nEvents./n1);
+                    n3 = n2./n1;
+                    cla(figureHandle1);
+                    figureHandle1.Units = 'pixels';
+                    w = figureHandle1.Position(3);
+                    h = figureHandle1.Position(4);
+                    figureHandle1.Units = 'normalized';
+                    aspectratio = w/h;
+                    [~,i] = min(abs(aspectratio-n3));
+                    ncol = n2(i);
+                    nrow = n1(i);
                 else
-                    gridSize = [ceil(nEvents/width), width];
+                    ncol = size(imageMu,3);
+                    nrow = 1;
                 end
-                out = imtile(imageMu, 'GridSize',gridSize,'thumbnailSize', [spotWidth*mag, spotHeight*mag],...
-                    'BorderSize', 1);
+                out = imtile(imageMu, 'GridSize',[nrow ,ncol], 'ThumbnailSize', [50,50]);
                 if mu == 0
-                    imshow(out,  'DisplayRange', [0,1], 'Parent', figureHandle1);
+                    imshow(out,  'DisplayRange', [0,1], 'Parent', figureHandle1, 'InitialMagnification', 10);
                 else
-                    imshow(out,  'DisplayRange', [mu-sigma, mu+5*sigma], 'Parent', figureHandle1);
+                    imshow(out,  'DisplayRange', [mu-sigma, mu+5*sigma], 'Parent', figureHandle1,'InitialMagnification', 100);
                 end
             end
             

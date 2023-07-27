@@ -21,7 +21,7 @@ if nargin < 3 || isempty(showResult)
 end
 
 % MANUALLY SET ----------------------
-aoi.minSeperation = 5;
+% aoi.minSeperation = 5;
 image = double(image);
 
 switch aoi.method

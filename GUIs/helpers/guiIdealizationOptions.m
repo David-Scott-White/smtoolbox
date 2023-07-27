@@ -18,7 +18,7 @@ switch handles.popupmenuAlgorithms.String{handles.popupmenuAlgorithms.Value}
         parm2.intput_value = parm.alpha; 
         parm2.divisive = parm.divisive;
         parm2.agglomerative = parm.agglomerative;
-        parm2.vitiberi = parm.viterbi; 
+        parm2.viterbi = parm.viterbi; 
         parm2.return_k = parm.return_k;
         if isnan(parm2.return_k)
             parm2.return_k = 0;

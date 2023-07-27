@@ -1,4 +1,4 @@
-function h = plotRaster(events, varargin)
+function [h,sortedIdx] = plotRaster(events, varargin)
 % -------------------------------------------------------------------------
 % Raster plot of idealized traces
 % -------------------------------------------------------------------------
@@ -30,6 +30,7 @@ frameRate_s = 1;   % else, returns frames
 modFrameRate = 0;
 fractionBound = []; 
 fractionBoundColor = [0.8500, 0.3250, 0.0980]; 
+width = 1; 
 for i = 1:2:length(varargin)-1
     switch varargin{i}
         case 'sortTraces'
@@ -40,7 +41,11 @@ for i = 1:2:length(varargin)-1
             frameRate_s = varargin{i+1};
             modFrameRate = 1;
         case 'fractionBound'
-            fractionBound = varargin{i+1}; 
+            fractionBound = varargin{i+1};
+        case 'fractionBoundColor'
+            fractionBoundColor = varargin{i+1};
+        case 'width'
+            width = varargin{i+1};
     end
 end
 
@@ -83,14 +88,14 @@ h = figure;
 ylabel('Molecule')
 hold on
 xlim([0, maxFrame*frameRate_s]);
-ylim([-1, N])
+ylim([0, N])
 for i = 1:N
     for j = 1:size(events{i},1)
         if events{i}(j,4) > minState
             s0 = events{i}(j,1)*frameRate_s;
             s1 = events{i}(j,3)*frameRate_s;
             % xstart, ystart, xlength, ylength
-            rectangle('Position',[s0, i-0.5, s1, 1], 'EdgeColor', colorScheme, 'FaceColor', colorScheme);
+            rectangle('Position',[s0, i-0.5, s1, width], 'EdgeColor', colorScheme, 'FaceColor', colorScheme);
         end
     end
 end
@@ -98,8 +103,8 @@ end
 % should add text to top left for number of molecuels in plot 
 
 if ~isempty(fractionBound)
-    %     yyaxis right
-    %     ylabel('Fraction Bound')
+         yyaxis right
+         ylabel('Fraction Bound')
     hold on
     if modFrameRate
         time_s = frameRate_s:frameRate_s:(length(fractionBound)*frameRate_s);
@@ -107,14 +112,15 @@ if ~isempty(fractionBound)
     else
         plot(fractionBound, '-', 'color', fractionBoundColor, 'linewidth',2);
     end
-%     if sum(fractionBound>1)
-%         ylim([-1, N])
-%         ylabel('Molecules Bound')
-%     else
-%         ylim([0,1])
-%         ylabel('Fraction Bound')
-%     end
+    if sum(fractionBound>1)
+        ylim([-1, N])
+        ylabel('Molecules Bound')
+    else
+        ylim([0,1])
+        ylabel('Observed Fraction Bound')
+    end
 end
+h.Children(1).YColor = fractionBoundColor;
 
 
 if modFrameRate

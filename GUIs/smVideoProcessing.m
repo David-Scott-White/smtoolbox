@@ -806,8 +806,15 @@ if ~isempty(exportInfo)
         x2 = handles.slider_BCmax2.Value;
     end
     
+    if isnan(exportInfo.stopFrame)
+        exportInfo.stopFrame = size(video,3);
+    elseif  exportInfo.stopFrame >  size(video,3)
+        exportInfo.stopFrame = size(video,3);
+    end
+    % need a few more error checks but good enough for now 7/20/23-DSW
     % write images
-    writeImagesToVideo(video, 'aoi', bb, 'time_s', time_s,...
+    writeImagesToVideo(video(:,:,exportInfo.startFrame:exportInfo.stopFrame), 'aoi', bb,...
+        'time_s', time_s(exportInfo.startFrame:exportInfo.stopFrame),...
     'scaleBar', scaleBar, 'umPerPixel', umPerPixel, 'filePath', tempFilePath, ...
     'frameRate', frameRate_s, 'displayRange', [x1, x2]);
 end
@@ -1010,6 +1017,12 @@ function saveVideo_Callback(hObject, eventdata, handles)
 
 % Option to export data back to tiff (background, drift, align)
 [saveFile,savePath] = uiputfile('.tiff'); 
+
+% hardcoded to save imagestack 2
+image2 = mean(handles.data.videos{2}(:,:,100:103),3);
+t = Tiff([savePath, saveFile],'w');
+t.write(image2);
+imwrite(image2, [savePath, saveFile])
 
 
 function resetImages_Callback(hObject, eventdata, handles)

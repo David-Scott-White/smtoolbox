@@ -11,6 +11,9 @@ if ~isfield(handles.data, 'idealParm') || isempty(handles.data.idealParm{chaIdx}
 end
 
 parm = handles.data.idealParm{chaIdx};
+if parm.viterbi == 1
+    parm.viterbi = 3;
+end
 applyToAll = handles.checkboxApplyToAll.Value;
 
 switch handles.data.idealParm{chaIdx}.method

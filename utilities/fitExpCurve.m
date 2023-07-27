@@ -16,11 +16,11 @@ if ~exist('plotFigure', 'var') || isempty(plotFigure)
     plotFigure = 0;
 end
 
+% free c
 ft = fittype('a*exp(-b*t) + c','indep','t');
-% fitOptions = fitoptions('Method', 'NonlinearLeastSquares', 'Lower', [-inf,-inf, -inf], 'Upper', [inf, inf, inf], 'StartPoint',[y(1), t0, max(y)]);
-
 fitOptions = fitoptions('Method', 'NonlinearLeastSquares','StartPoint',[y(1), t0, max(y)]);
-% mdl = fit(x, y, ft,'start',[y(1), t0, max(y)], fitOptions);
+
+
 
 mdl = fit(x, y, ft, fitOptions);
 yhat = mdl.a*exp(-mdl.b*x) + mdl.c;

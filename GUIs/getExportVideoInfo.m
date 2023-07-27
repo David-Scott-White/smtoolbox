@@ -6,10 +6,10 @@ function exportInfo = getExportVideoInfo()
 % MIT
 exportInfo = struct; 
 prompt = {'Channel', 'FrameRate (s)', 'Show AOI (bool)',...
-    'Show Time (bool)', 'Scale Bar (um)', 'Pixels per um'};
+    'Show Time (bool)', 'Scale Bar (um)', 'Pixels per um', 'Start Frame', 'Stop Frame'};
 dlgtitle = 'Export Video Input';
 dims = [1 35];
-definput = {'1', '10', '1', '1', '10', '0.216'};
+definput = {'1', '10', '1', '1', '10', '0.216', '1', ''};
 answer = inputdlg(prompt,dlgtitle,dims,definput);
 
 % emperical
@@ -20,5 +20,7 @@ if ~isempty(answer)
     exportInfo.showTime = str2double(answer{4});
     exportInfo.scaleBar_um = str2double(answer{5});
     exportInfo.umPerPixel = str2double(answer{6});
+    exportInfo.startFrame = str2double(answer{7});
+    exportInfo.stopFrame = str2double(answer{8});
 end
 end

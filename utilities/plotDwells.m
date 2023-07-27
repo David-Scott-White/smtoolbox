@@ -17,6 +17,8 @@ plotData{1} = dwells;
 bins = 'auto';              % can be number of bins, edges, or string
 normalization = 'count';    % count or PDF work currently. see histogram.m
 plotType = 'bar';           % bar or scatter (need to add stairs and log hist, & cummulative)
+plotStairs = 0; 
+stairsColor = 'k';
 countError = [];            % boolean. Default 1 for scatter, 0 for bar
 fitError = 0;               % boolean. Default 1 for scatter, 0 for bar * not currently functional do not use!
 edgeColor = 'k';            % color of edges (and errorbars)
@@ -69,6 +71,10 @@ for i = 1:2:length(varargin)-1
             legendLocation = varargin{i+1};
         case 'capSize'
             capSize = varargin{i+1};
+        case 'plotStairs'
+            plotStairs = varargin{i+1};
+        case 'stairsColor'
+            stairsColor = varargin{i+1};
     end
 end
 if ~isempty(plotSize)
@@ -137,7 +143,6 @@ switch normalization
     case 'count'
         binCountSum = sum(binCounts);
         binError = sqrt(binCountSum*binCounts./binCountSum .* (1-binCounts./binCountSum));
-        % areaAdjust = binWidth*binCountSum;
         areaAdjust = sum(binWidth.*binCounts);
         if binCountSum ~= length(dwells)
             disp('Warning in plotDwells: not all dwells included in plot due to bins')
@@ -231,7 +236,11 @@ switch plotType
         set(ha,'Marker','none');
         if countError
             hold on
-            errorbar(binCenters, binCounts, binError, edgeColor, 'linestyle','none')
+            errorbar(binCenters, binCounts, binError, edgeColor, 'linestyle','none',  'HandleVisibility','off')
+        end
+        if plotStairs
+            hold on
+            stairs(binCenters-binCenters(1), binCounts, 'color', stairsColor, 'HandleVisibility','off')
         end
         
     case 'scatter'
@@ -317,11 +326,12 @@ if showLegend
                 'Location', legendLocation);
             leg.ItemTokenSize = leg.ItemTokenSize/3;
         else
+            nd = 1;
             leg = legend(['N = ', num2str(length(dwells))],...
-                ['\tau_1 (s) = ', num2str(round(dwellFits.biExpTau(1),1)), ' (',num2str(round(dwellFits.biExpAmp(1),2)),') ', ...
-                newline, '\tau_2 (s) = ', num2str(round(dwellFits.biExpTau(2),1)), ' (',num2str(round(dwellFits.biExpAmp(2),2)), ') '], ...
+                ['A_1 = ', num2str(round(dwellFits.biExpAmp(1),2)), ' ± ', num2str(round(dwellFits.biExpAmpSE(1),2)), ...
+                newline, '\tau_1 = ', num2str(round(dwellFits.biExpTau(1),nd)), ' ± ', num2str(round(dwellFits.biExpTauSE(1),nd)), ' s', ...
+                newline, '\tau_2 = ', num2str(round(dwellFits.biExpTau(2),nd)), ' ± ', num2str(round(dwellFits.biExpTauSE(2),nd)), ' s'],...
                 'Location', legendLocation);
-            % Legend items are too big by default, decrease size
             leg.ItemTokenSize = leg.ItemTokenSize/3;
         end
     else

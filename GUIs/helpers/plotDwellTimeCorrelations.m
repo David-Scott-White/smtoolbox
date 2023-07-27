@@ -1,4 +1,4 @@
-function h = plotDwellTimeCorrelations(dwellPair, binWidth, plotCorr, showData)
+function h = plotDwellTimeCorrelations(dwellPair, binWidth, minBin, maxBin, plotCorr, showData)
 % -------------------------------------------------------------------------
 % Plot dwell time correlations
 % -------------------------------------------------------------------------
@@ -15,17 +15,17 @@ function h = plotDwellTimeCorrelations(dwellPair, binWidth, plotCorr, showData)
 % License: MIT
 % -------------------------------------------------------------------------
 
-x = dwellPair(:,1); 
-y = dwellPair(:,2); 
+x = log10(dwellPair(:,1)); 
+y = log10(dwellPair(:,2)); 
 
 r = corrcoef(x,y);
 r = r(1,2);
 N = length(x); 
 
-minBin = -1; 
-maxBin = 4; 
+%minBin = -1; 
+%maxBin = 4; 
 
-[counts, bins] = hist3(log10([x,y]), {minBin:binWidth:maxBin,minBin:binWidth:maxBin});
+[counts, bins] = hist3([x,y], {minBin:binWidth:maxBin,minBin:binWidth:maxBin});
 xx = min(bins{1}):binWidth:max(bins{1});
 yy = min(bins{2}):binWidth:max(bins{2});
 [X1, Y1] = meshgrid(bins{1}, bins{2});
@@ -44,7 +44,7 @@ end
 
 if showData
     hold on
-    scatter(log10(x), log10(y), 3,'filled', 'o', 'MarkerEdgeColor','k', 'MarkerFaceColor', 'k');
+    scatter(x, y, 3,'filled', 'o', 'MarkerEdgeColor','k', 'MarkerFaceColor', 'k');
 end
 
 % titleText = ['N = ', num2str(length(x)), ', {\it r} = ', num2str(round(r,2))];

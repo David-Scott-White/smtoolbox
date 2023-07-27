@@ -11,8 +11,11 @@ if isfield(handles.data.rois(roiIndex, channelIndex), 'fit')
         maxstates = size(handles.data.rois(roiIndex,channelIndex).fit.all_ideal,2);
         k = nstates+p;
         if k >= minstates && k <= maxstates
+            ss = handles.data.rois(roiIndex, channelIndex).fit.all_ideal(:,k);
+            ts = handles.data.rois(roiIndex, channelIndex).timeSeries;
+             [viterbi_data_fit] = runViterbi(ts, ss,3);
             [comps, ideal, class] = computeCenters(handles.data.rois(roiIndex, channelIndex).timeSeries,...
-                handles.data.rois(roiIndex, channelIndex).fit.all_ideal(:,k));
+                viterbi_data_fit);
             handles.data.rois(roiIndex, channelIndex).fit.components = comps;
             handles.data.rois(roiIndex, channelIndex).fit.ideal = ideal;
             handles.data.rois(roiIndex, channelIndex).fit.class = class;

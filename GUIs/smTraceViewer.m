@@ -418,23 +418,37 @@ switch eventdata.Key
         guiUpdateTraceInfo(hObject, handles);
         
     case 'uparrow'
-        if ~isfield(handles.data.rois, 'status') % need init function
-            [handles.data.rois.status] = deal(0); % default is selected
-        end
-        roiIdx = handles.info.roiIndex(1);
-        if  handles.data.rois(roiIdx, handles.info.channelIndex).status == 0
+        if  handles.data.rois(handles.info.roiIndex, handles.info.channelIndex).status == 0
             for i = 1:handles.info.nchannels
-                handles.data.rois(roiIdx, i).status = 1; % assign to all channels
+                handles.data.rois(handles.info.roiIndex, i).status = 1;
             end
-            handles.info.nselected =   [handles.info.nselected + 1, handles.info.nselected + 1];
-        
+            handles.info.nselected = handles.info.nselected+1;
         end
+        % guiUpdateTraceInfo(hObject, handles); % should replace this with the specific update.
+        handles.textStatus.String = '0';
+        %totalSelected = handles.info.nselected(handles.info.channelIndex);
+        %newStr = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
+        %handles.textSelectedPercent.String = newStr;
+        guidata(hObject, handles);
+        
+        
+%         if ~isfield(handles.data.rois, 'status') % need init function
+%             [handles.data.rois.status] = deal(0); % default is selected
+%         end
+%         roiIdx = handles.info.roiIndex(1);
+%         if  handles.data.rois(roiIdx, handles.info.channelIndex).status == 0
+%             for i = 1:handles.info.nchannels
+%                 handles.data.rois(roiIdx, i).status = 1; % assign to all channels
+%             end
+%             handles.info.nselected =   [handles.info.nselected + 1, handles.info.nselected + 1];
+%         
+%         end
         % guiUpdateTraceInfo(hObject, handles);
         handles.textStatus.String = '1';
-        totalSelected = handles.info.nselected(handles.info.channelIndex);
+        %totalSelected = handles.info.nselected(handles.info.channelIndex);
         % handles.textSelectedPercent.String = [num2str(totalSelected), ' of ', num2str(handles.info.nrois), ' selected'];
-        handles.textSelectedPercent.String = num2str(totalSelected);
-        guidata(hObject, handles);
+        %handles.textSelectedPercent.String = num2str(totalSelected);
+        %guidata(hObject, handles);
         
     case  'downarrow' % NEED BUTTON TO APPLY TO ALL CHANNELS OR ONLY CURRENT
         if  handles.data.rois(handles.info.roiIndex, handles.info.channelIndex).status == 1
@@ -459,7 +473,7 @@ switch eventdata.Key
         handles.info.channelIndex = j;
         guiUpdateTraceInfo(hObject, handles);
         
-    case {'a'}
+    case {'a', 'shift', 'm'}
         handles = guiIdealizeTrace(hObject, handles);
         guidata(hObject, handles);
         guiPlotTraces(hObject, handles, 1); % should be smarter to only redraw one

@@ -80,4 +80,6 @@ else
         
     end
     close(wb)
+    fclose(traceFile); 
+    fclose(idealFile);
 end
