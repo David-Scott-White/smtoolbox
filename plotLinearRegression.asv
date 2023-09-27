@@ -1,0 +1,42 @@
+function h = plotLinearRegression(mdl, x, y, varargin)
+% David S. White 
+% 2023-09-08
+
+% Function to plot results of linearRegression.m
+
+% Defaults
+showConfidenceInterval = true; 
+color = 'r';
+marker = 'o';
+markerFaceColor = 'w'; 
+markerEdgeColor = 'k';
+xmin = min(x);
+xmax = max(x);
+
+for i = 1:2:length(varargin)-1
+    switch varargin{i}
+        case 'showConfidenceInterval'
+            showConfidenceInterval = varargin{i+1};
+        case 'color'
+            color = varargin{i+1};
+        case 'marker'
+            marker = varargin{i+1};
+        case 'markerFaceColor'
+            markerFaceColor = varargin{i+1};
+        case 'markerEdgeColor'
+            markerEdgeColor = varargin{i+1};
+        case 'xmin'
+            xmin = varargin{i+1};
+        case 'xmax'
+            xmax = varargin{i+1};
+    end
+end
+
+% adjust data
+x = x(:);
+y = y(:);
+
+% evalue range o
+ xx = linspace(0, max(x), 100);
+    xx = xx(:);
+    yy = feval(mdl, xx);

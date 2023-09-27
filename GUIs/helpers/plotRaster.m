@@ -101,7 +101,7 @@ for i = 1:N
 end
 
 % should add text to top left for number of molecuels in plot 
-
+h.Children(1).YColor = 'k';
 if ~isempty(fractionBound)
          yyaxis right
          ylabel('Fraction Bound')
@@ -119,9 +119,8 @@ if ~isempty(fractionBound)
         ylim([0,1])
         ylabel('Observed Fraction Bound')
     end
+    h.Children(1).YColor = fractionBoundColor;
 end
-h.Children(1).YColor = fractionBoundColor;
-
 
 if modFrameRate
 %     x1 = xticklabels; 

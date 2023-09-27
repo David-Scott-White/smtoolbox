@@ -98,8 +98,8 @@ end
 
 % Maximum likelihood estimates --------------------------------------------
 for i = 1:nExponentials
-    
-        % single exponential
+
+    % single exponential
     if i == 1
         p0 = muDwells;
         lb = lowerboundTau;
@@ -138,9 +138,28 @@ for i = 1:nExponentials
         dwellMLE.ll{i} = evalExp2(dwells, dwellMLE.pdf{i}, dwellMLE.phat{i});
         
         % triple exponential
-        
+    elseif i == 3
+        % temp 
+        p0 = [0.2, 0.1, 300, 300, 100];
+        lb = [lowerboundAmp, lowerboundAmp, lowerboundTau, lowerboundTau, lowerboundTau];
+        ub = [upperboundAmp, upperboundAmp, upperboundTau, upperboundTau, upperboundTau];
+        if ~bootstrap
+            [dwellMLE.phat{i}, dwellMLE.pci{i}] = mleExp3(dwells, dwellMLE.pdf{i}, p0, lb, ub, options);
+            dwellMLE.se{i} = (dwellMLE.phat{i}-dwellMLE.phat{i}(1))/1.96;
+        else
+            phat = zeros(1000,3);
+            for j = 1:1000
+                phat(j,:) = mleExp2(dwells(:,j), dwellMLE.pdf{i}, p0, lb, ub, options);
+            end
+            [dwellMLE.phat{i}, dwellMLE.se{i}] = normfit(phat);
+            phat = sort(phat);
+            dwellMLE.pci{i} = [phat(25,:);phat(975,:)];
+        end
+        dwellMLE.ll{i} = evalExp3(dwells, dwellMLE.pdf{i}, dwellMLE.phat{i});
     end
     
+end
+
     
     
     % LLR & BIC
@@ -189,6 +208,7 @@ for i = 1:nExponentials
     % compare the fits (LLR, BIC)
     
 end
+
 % Local functions for maximum likelihood estimates ------------------------
     function [phat, pci] = mleExp1(x, pdfFunc, param0, lowerbound, upperbound, options)
         % phat = estimated paramters.
@@ -250,4 +270,3 @@ end
         ll = sum(log(y));
     end
 
-end

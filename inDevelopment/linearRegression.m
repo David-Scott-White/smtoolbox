@@ -1,70 +1,65 @@
-function [mdl, RMSE, R2, h] = linearRegression(x, y, fitIntercept, plotData)
+function [mdl, RMSE, R2] = linearRegression(x, y, varargin)
 %% David S. White 
-% 2023-07-14
-
-% simple function to perform linear regression of y on x 
-% will return 95% prediction bounds and compute RMSE, R2
-% makes a nice plot 
-
-% add in options for fit display? Color?
-
+% 2023-09-08
+% 
+% Linear regression of x on y. Currently only 2D data
 % requires matlab curve fitting toolbox 
-if nargin < 3
-    fitIntercept = 1; 
+
+% To plot results, see plotLinearRegression
+
+% defaults;
+slope = [];
+intercept = [];
+for i = 1:2:length(varargin)-1
+    switch varargin{i}
+        case 'slope'
+            slope = varargin{i+1};
+        case 'intercept'
+            intercept = varargin{i+1};
+    end
 end
-if nargin < 4
-    plotData = 0;
-end
-if fitIntercept
-ft = fittype('a + b*x',...
-    'dependent',{'y'},'independent',{'x'},...
-    'coefficients',{'a','b'});
-else
-    ft = fittype('b*x',...
-    'dependent',{'y'},'independent',{'x'},...
-    'coefficients',{'b'});
-end
+
+% ensure data is in the correct format
 x = x(:);
 y = y(:);
 
 % normal equation to estimate parameters
-if fitIntercept
-    X = [ones(length(x),1) x];
-    p0 = X\y;
-    mdl = fit(x, y, ft, 'StartPoint', [p0(1), p0(2)]);
-else
-    p0 = x\y;
-    mdl = fit(x, y, ft, 'StartPoint', p0(1));
+X = [ones(length(x),1) x];
+p0 = X\y;
+
+% possible equations (of y = mx+b)
+
+% fit both slope and intercept
+if isempty(slope) && isempty(intercept)
+    ft = fittype('m*x+b',...
+        'dependent',{'y'},'independent',{'x'},...
+        'coefficients',{'m','b'});
+    mdl = fit(x, y, ft, 'StartPoint', [p0(2), p0(1)]);
+
+% fit slope with provided intercept
+elseif ~isempty(slope) && isempty(intercept)
+    ft = fittype('m*x+b',...
+        'dependent',{'y'},'independent',{'x'},...
+        'coefficients', {'b'}, 'problem', 'm');
+    mdl = fit(x, y, ft, 'StartPoint', p0(1), 'problem', slope);
+
+% fit intercept with provided slope
+elseif isempty(slope) && ~isempty(intercept)
+     ft = fittype('m*x+b',...
+        'dependent',{'y'},'independent',{'x'},...
+        'coefficients',{'m'}, 'problem', 'b');
+    mdl = fit(x, y, ft, 'StartPoint', p0(2), 'problem', intercept);
+
 end
 
-xx = linspace(min(x), max(10), 100); 
 Yhat = feval(mdl, x); 
 R2 = 1 - sum((y - Yhat).^2)/sum((y - mean(y)).^2);
 RMSE = sqrt((sum((y - Yhat).^2))/length(y));
-if plotData
-    xx = linspace(min(x), max(x), 100); 
-    xx = xx(:);
-    yy = feval(mdl, xx);
-    CIF = predint(mdl, xx, 0.95,'Functional');
-    h = figure;
-    hold on
-    patch([xx' fliplr(xx')], [CIF(:,2)' fliplr(CIF(:,1)')],...
-        'r', 'FaceColor', 'r', 'EdgeColor','none', 'FaceAlpha', 0.1);
-    plot(xx,yy, '-r')
-    plot(x,y, 'ok', 'MarkerFaceColor', 'w')
-    legend('95% CI', 'Fit', 'Data', 'Location', 'Best')
-    xlabel('x');
-    ylabel('y')
-else
-    h = [];
-end
+
+% print output
 disp('Linear Regression:')
-disp(['>> Slope: ', num2str(mdl.b)])
-if fitIntercept
-    disp(['>> Intercept: ', num2str(mdl.a)])
-else
-    disp('>> Intercept: 0')
-end
+disp(['>> Slope: ', num2str(mdl.m)])
+disp(['>> Intercept: ', num2str(mdl.b)])
 disp(['>> R2: ', num2str(R2)])
 disp(['>> RMSE: ', num2str(RMSE)])
 

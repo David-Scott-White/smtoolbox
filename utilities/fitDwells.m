@@ -32,6 +32,11 @@ function [dwellFits, yPDF] = fitDwells(dwells, nExp, bootStrap, fitLimits, tauGu
 % check input, assign default
 dwells = dwells(:);
 nDwells = length(dwells);
+if nDwells < 1
+    dwellFits =[]; 
+    yPDF = [];
+    return 
+end
 if ~exist('nExp','var') || isempty(nExp); nExp = 2; end
 if ~exist('bootStrap','var') || isempty(bootStrap); bootStrap = 0; nBoot=0; else; nBoot=1000; end
 if ~exist('fitLimits', 'var') || isempty(fitLimits); fitLimits = []; end
@@ -57,6 +62,7 @@ guessFactor = 2;
 % Fit parameters, bootstrap data?
 phat = cell(nExp,1);
 pci = cell(nExp,1);
+
 % monoExp
 [phat{1}, pci{1}] = mle(dwells,'pdf',expPDF1,'start', xmu,'lowerbound',lb,'upperbound',ub, ...
            'Options',statset('MaxIter',1e5, 'MaxFunEvals', 1e5));

@@ -34,7 +34,7 @@ for i = 1:N
         % Average Time per State ---
         unbound_mean = mean(e(e(:,4)==0, 3))*frame_rate_s;
         bound_mean = mean(e(e(:,4)==1, 3))*frame_rate_s;
-        dwellPairs{1} = [dwellPairs{1}; [bound_mean, unbound_mean]];
+        dwellPairs{1} = [dwellPairs{1}; [bound_mean, unbound_mean, i]];
     end
     % Unbound dwell vs bound dwell ---
     if nEvents > 1

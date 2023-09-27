@@ -60,7 +60,7 @@ handles.output = hObject;
 if ~isempty(varargin)
     handles.data = varargin{:};
     handles = guiInitSMTraceViewer(hObject, handles);
-    guidata(hObject, handles); 
+    guidata(hObject, handles);
 end
 handles = guiSetInitialParamtersTraceViewer(hObject, handles); % handles.info
 handles = guiUpdateFilterDisplay(hObject, handles); % set defaults in window
@@ -152,7 +152,7 @@ end
 function pushbuttonSetOptions_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbuttonSetOptions (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA) 
+% handles    structure with handles and user data (see GUIDATA)
 handles = guiIdealizationOptions(hObject, handles);
 guidata(hObject, handles);
 
@@ -225,7 +225,7 @@ function menuPlotDwellTimes_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 roi = handles.data.rois(handles.info.roiIndex, :);
-figure; 
+figure;
 plot(roi(1).timeSeries); hold on; plot(roi(2).timeSeries);
 
 % --------------------------------------------------------------------
@@ -432,17 +432,17 @@ switch eventdata.Key
         guidata(hObject, handles);
         
         
-%         if ~isfield(handles.data.rois, 'status') % need init function
-%             [handles.data.rois.status] = deal(0); % default is selected
-%         end
-%         roiIdx = handles.info.roiIndex(1);
-%         if  handles.data.rois(roiIdx, handles.info.channelIndex).status == 0
-%             for i = 1:handles.info.nchannels
-%                 handles.data.rois(roiIdx, i).status = 1; % assign to all channels
-%             end
-%             handles.info.nselected =   [handles.info.nselected + 1, handles.info.nselected + 1];
-%         
-%         end
+        %         if ~isfield(handles.data.rois, 'status') % need init function
+        %             [handles.data.rois.status] = deal(0); % default is selected
+        %         end
+        %         roiIdx = handles.info.roiIndex(1);
+        %         if  handles.data.rois(roiIdx, handles.info.channelIndex).status == 0
+        %             for i = 1:handles.info.nchannels
+        %                 handles.data.rois(roiIdx, i).status = 1; % assign to all channels
+        %             end
+        %             handles.info.nselected =   [handles.info.nselected + 1, handles.info.nselected + 1];
+        %
+        %         end
         % guiUpdateTraceInfo(hObject, handles);
         handles.textStatus.String = '1';
         %totalSelected = handles.info.nselected(handles.info.channelIndex);
@@ -536,6 +536,61 @@ switch eventdata.Key
                 else
                     % no more selected, no updates
                     done = 1;
+                end
+            end
+        end
+        
+                    
+    case {'w','x'}
+        %find next unselected traces (status == 0)
+        if isfield(handles, 'data') % would make sense to store a list of all? update as selected...
+            i = handles.info.roiIndex;
+            j = handles.info.channelIndex;
+            done = 0;
+            while ~done
+                i = i + 1;
+                if i <= size(handles.data.rois,1)
+                    if handles.data.rois(i,j).status == 0
+                        handles.info.roiIndex = i;
+                        handles.info.currentEvent = 1;
+                        handles.sliderAOI.Value =  handles.info.roiIndex;
+                        handles.textCurrentAOI.String = num2str(handles.sliderAOI.Value);
+                        guiPlotTraces(hObject, handles, 1);
+                        guiPlotTraces(hObject, handles, 2);
+                        guiUpdateTraceInfo(hObject, handles);
+                        guidata(hObject, handles);
+                        done = 1;
+                    end
+                else
+                    done = 1;
+                    % no updates
+                end
+            end
+        end
+        
+    case {'q','z'}
+        % find next unselected traces (status == 0)
+        if isfield(handles, 'data') % would make sense to store a list of all? update as selected...
+            i = handles.info.roiIndex;
+            j = handles.info.channelIndex;
+            done = 0;
+            while ~done
+                i = i - 1;
+                if i <= size(handles.data.rois,1)
+                    if handles.data.rois(i,j).status == 0
+                        handles.info.roiIndex = i;
+                        handles.info.currentEvent = 1;
+                        handles.sliderAOI.Value =  handles.info.roiIndex;
+                        handles.textCurrentAOI.String = num2str(handles.sliderAOI.Value);
+                        guiPlotTraces(hObject, handles, 1);
+                        guiPlotTraces(hObject, handles, 2);
+                        guiUpdateTraceInfo(hObject, handles);
+                        guidata(hObject, handles);
+                        done = 1;
+                    end
+                else
+                    done = 1;
+                    % no updates
                 end
             end
         end

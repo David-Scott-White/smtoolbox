@@ -1,4 +1,4 @@
-function h = plotDwellTimeCorrelations(dwellPair, binWidth, minBin, maxBin, plotCorr, showData)
+function h = plotDwellTimeCorrelations(dwellPair, binWidth, minBin, maxBin, plotCorr, showData, normalizeCounts)
 % -------------------------------------------------------------------------
 % Plot dwell time correlations
 % -------------------------------------------------------------------------
@@ -14,18 +14,32 @@ function h = plotDwellTimeCorrelations(dwellPair, binWidth, minBin, maxBin, plot
 % Updated: 2021-10-22
 % License: MIT
 % -------------------------------------------------------------------------
+% if nargin < 7
+%     logbase = 10;
+% end
 
-x = log10(dwellPair(:,1)); 
-y = log10(dwellPair(:,2)); 
+logbase = 10;
+
+if logbase == 10
+    x = log10(dwellPair(:,1));
+    y = log10(dwellPair(:,2));
+else
+    x = log(dwellPair(:,1))./log(logbase);
+    y = log(dwellPair(:,2))./log(logbase);
+end
 
 r = corrcoef(x,y);
 r = r(1,2);
 N = length(x); 
 
+
 %minBin = -1; 
 %maxBin = 4; 
 
 [counts, bins] = hist3([x,y], {minBin:binWidth:maxBin,minBin:binWidth:maxBin});
+if normalizeCounts
+    counts = scaleFeature(counts,'minmax');
+end
 xx = min(bins{1}):binWidth:max(bins{1});
 yy = min(bins{2}):binWidth:max(bins{2});
 [X1, Y1] = meshgrid(bins{1}, bins{2});
@@ -34,12 +48,19 @@ counts = interp2(X1, Y1, counts', X2, Y2);
 
 h = figure; 
 contour(xx,yy,counts); 
-colormap(jet); 
-colorbar
+colormap(parula); 
+h1 = colorbar;
+%h1.Ticks = [];
+if normalizeCounts
+    h1.Label.String = 'Normalized Count';
+    h1.Ticks = 0:0.2:1;
+else
+    h1.Label.String = 'Count';
+end
 
 if plotCorr
     hold on
-    plot(minBin:maxBin, minBin:maxBin,'--k')
+    plot(minBin:(maxBin+1), minBin:(maxBin+1),'--k')
 end
 
 if showData
@@ -57,5 +78,8 @@ yticks(minBin:1:maxBin)
 
 xlim([minBin+1 maxBin])
 ylim([minBin+1, maxBin])
+
+xlim([0 maxBin])
+ylim([0, maxBin])
 
 end
